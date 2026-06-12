@@ -1,0 +1,253 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* --- Global Responsive Containers --- */
+.container-responsive {
+  padding-left: 100px !important;
+  padding-right: 100px !important;
+}
+
+@media (max-width: 1024px) {
+  .container-responsive {
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .container-responsive {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  
+  /* Reduction of vertical padding for smaller screens */
+  .container-responsive[style*="padding: 60px 100px"],
+  .container-responsive[style*="padding: 80px 100px"],
+  .container-responsive[style*="padding: 40px 100px"] {
+    padding-top: 32px !important;
+    padding-bottom: 32px !important;
+  }
+
+  /* Reduce heading size in PageHero on mobile to prevent overflow */
+  .container-responsive h1 {
+    font-size: 26px !important;
+  }
+}
+
+/* --- Navbar Responsiveness --- */
+.nav-container-responsive {
+  padding-left: 100px !important;
+  padding-right: 100px !important;
+}
+
+@media (max-width: 900px) {
+  .nav-container-responsive {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-toggle-btn {
+    display: flex !important;
+  }
+}
+
+/* --- Hero Section Responsiveness --- */
+@media (max-width: 900px) {
+  .hero-flex-responsive {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 40px !important;
+    padding-top: 50px !important;
+    padding-bottom: 50px !important;
+  }
+  .hero-flex-responsive > div {
+    max-width: 100% !important;
+    text-align: center !important;
+  }
+  .hero-flex-responsive h1 {
+    font-size: 32px !important;
+    text-align: center !important;
+  }
+  .hero-flex-responsive p {
+    font-size: 16px !important;
+    text-align: center !important;
+  }
+  .hero-flex-responsive div[style*="display: flex"] {
+    justify-content: center !important;
+    gap: 12px !important;
+  }
+  /* Decorative logo scaling */
+  .hero-flex-responsive div[style*="width: 400px"] {
+    width: 260px !important;
+    height: 260px !important;
+    margin: 0 auto !important;
+  }
+  .hero-flex-responsive div[style*="width: 400px"] img {
+    width: 130px !important;
+    height: 130px !important;
+  }
+}
+
+/* --- Stats Strip Responsiveness --- */
+@media (max-width: 768px) {
+  .stats-container-responsive {
+    flex-wrap: wrap !important;
+    gap: 16px 24px !important;
+    justify-content: center !important;
+    padding-top: 24px !important;
+    padding-bottom: 24px !important;
+  }
+  .stats-container-responsive > div {
+    flex: 1 1 40% !important;
+  }
+}
+
+/* --- Welcome Flyer Section --- */
+@media (max-width: 768px) {
+  .flyer-section-responsive {
+    padding: 0 16px !important;
+    margin-top: 32px !important;
+  }
+}
+
+/* --- About Section & Preview Cards --- */
+@media (max-width: 640px) {
+  .about-section-responsive {
+    padding-top: 40px !important;
+    padding-bottom: 40px !important;
+  }
+  .about-section-responsive h2 {
+    font-size: 28px !important;
+  }
+  .preview-cards-responsive {
+    justify-content: center !important;
+    gap: 20px !important;
+  }
+  .service-card-responsive {
+    width: 100% !important;
+    max-width: 320px !important;
+  }
+}
+
+/* --- Additional Services Responsiveness --- */
+.additional-services-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .additional-services-grid > div {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 24px 20px !important;
+    gap: 16px !important;
+  }
+}
+
+/* --- Donate Page Responsiveness --- */
+.donate-flex-row {
+  display: flex !important;
+  gap: 24px !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+}
+
+.donate-card-responsive {
+  width: 100% !important;
+  max-width: 560px !important;
+}
+
+@media (max-width: 768px) {
+  .donate-card-responsive > div[style*="padding: 28px"] {
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+  .donate-card-responsive > div[style*="padding: 28px"] > div[style*="flex: 1"] {
+    width: 100% !important;
+  }
+  .donate-card-responsive > div[style*="padding: 28px"] > div[style*="width: 120px"] {
+    align-self: center !important;
+  }
+}
+
+/* --- Memorial Wall Responsiveness --- */
+.memorial-grid-responsive {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+  max-width: 100% !important;
+  gap: 20px !important;
+}
+
+.memorial-grid-responsive > div {
+  width: 100% !important;
+  min-height: auto !important;
+  padding: 24px 16px !important;
+}
+
+@media (max-width: 640px) {
+  .memorial-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* --- Service Modal Responsiveness --- */
+@media (max-width: 768px) {
+  .modal-top-container {
+    flex-direction: column !important;
+  }
+  .modal-top-image {
+    width: 100% !important;
+    height: 180px !important;
+    min-height: auto !important;
+  }
+  .modal-top-info {
+    padding: 24px !important;
+  }
+  .modal-bottom-form-container {
+    padding: 20px !important;
+  }
+  .modal-form {
+    grid-template-columns: 1fr !important;
+  }
+  .modal-submit-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    text-align: center !important;
+  }
+}
+
+/* --- Appeal Card Responsiveness --- */
+@media (max-width: 640px) {
+  .appeal-card > div[style*="padding: 40px 48px"] {
+    padding: 24px 16px !important;
+  }
+  .appeal-card > div[style*="padding: 20px 32px"] {
+    padding: 16px 20px !important;
+  }
+  .appeal-card h2 {
+    font-size: 18px !important;
+    margin-bottom: 20px !important;
+  }
+}
+
+/* --- About Us Page Responsiveness --- */
+@media (max-width: 900px) {
+  .aboutus-flex {
+    flex-direction: column-reverse !important;
+    gap: 40px !important;
+  }
+  .aboutus-img-container {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+.aboutus-img-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.15) !important;
+}
+
