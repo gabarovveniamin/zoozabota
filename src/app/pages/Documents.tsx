@@ -1,32 +1,69 @@
+import { useState, useEffect } from 'react';
 import { PageHero } from '../components/PageHero';
 import { useLang } from '../i18n/LangContext';
+import { db, DEFAULT_DOCUMENTS, type DocumentItem } from '../db/memorialDB';
 
 export function Documents() {
   const { t } = useLang();
   const { agreement } = t;
+  
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
-  const documentList = [
-    {
-      title: t.lang === 'ru' ? 'Публичный договор-оферта' : t.lang === 'kz' ? 'Жария оферта шарты' : 'Public Offer Agreement',
-      description: t.lang === 'ru' ? 'Регулирует порядок оказания услуг мемориального комплекса.' : t.lang === 'kz' ? 'Мемориалды кешеннің қызмет көрсету тәртібін реттейді.' : 'Regulates the procedure for rendering services of the memorial complex.',
-      fileName: 'public_offer_zoozabota.pdf'
-    },
-    {
-      title: t.lang === 'ru' ? 'Правила посещения комплекса' : t.lang === 'kz' ? 'Кешенге келу ережелері' : 'Rules of Visiting the Complex',
-      description: t.lang === 'ru' ? 'Правила поведения на территории колумбария и мемориала.' : t.lang === 'kz' ? 'Колумбарий мен мемориал аумағындағы мінез-құлық ережелері.' : 'Rules of conduct on the territory of the columbarium and memorial.',
-      fileName: 'rules_and_regulations.pdf'
-    },
-    {
-      title: t.lang === 'ru' ? 'Политика конфиденциальности' : t.lang === 'kz' ? 'Құпиялылық саясаты' : 'Privacy Policy',
-      description: t.lang === 'ru' ? 'Правила сбора, обработки и защиты персональных данных.' : t.lang === 'kz' ? 'Жеке деректерді жинау, өңдеу және қорғау ережелері.' : 'Rules for collection, processing, and protection of personal data.',
-      fileName: 'privacy_policy_zoozabota.pdf'
-    },
-    {
-      title: t.lang === 'ru' ? 'Устав фонда «Өмірге Үміт Бер»' : t.lang === 'kz' ? '«Өмірге Үміт Бер» қорының жағымдамасы' : 'Charter of the Foundation «Ömirge Ümit Ber»',
-      description: t.lang === 'ru' ? 'Учредительный документ общественного фонда.' : t.lang === 'kz' ? 'Қоғамдық қордың құрылтай құжаты.' : 'Founding document of the public fund.',
-      fileName: 'charter_omirge_umit_ber.pdf'
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  useEffect(() => {
+    if (selectedDoc) {
+      const byteCharacters = atob(selectedDoc.fileData);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: selectedDoc.fileType });
+      const url = URL.createObjectURL(blob);
+      setPdfBlobUrl(url);
+
+      return () => {
+        URL.revokeObjectURL(url);
+        setPdfBlobUrl(null);
+      };
     }
-  ];
+  }, [selectedDoc]);
+
+  const loadDocuments = async () => {
+    let count = await db.documents.count();
+    if (count === 0) {
+      // Seed default documents
+      await db.documents.bulkAdd(DEFAULT_DOCUMENTS);
+    }
+    const allDocs = await db.documents.toArray();
+    setDocuments(allDocs);
+  };
+
+  const handleDownload = (doc: DocumentItem, e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent modal popup on download click
+    
+    const byteCharacters = atob(doc.fileData);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: doc.fileType });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = doc.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div>
@@ -70,93 +107,209 @@ export function Documents() {
               {t.lang === 'ru' ? 'Официальные документы для ознакомления' : t.lang === 'kz' ? 'Танысу үшін ресми құжаттар' : 'Official Documents for Review'}
             </h2>
 
-            <div 
-              style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-                gap: '24px' 
-              }}
-            >
-              {documentList.map((doc, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '20px',
-                    padding: '24px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
-                    border: '1px solid rgba(0,0,0,0.05)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.06)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.02)';
-                  }}
-                  onClick={() => alert(t.lang === 'ru' ? 'Файл подготавливается к загрузке' : t.lang === 'kz' ? 'Файл жүктеуге дайындалуда' : 'File is preparing for download')}
-                >
-                  <div>
-                    <div 
-                      style={{ 
-                        fontSize: '36px', 
-                        marginBottom: '16px',
-                        display: 'inline-block',
-                        color: '#6E8B51' 
-                      }}
-                    >
-                      📄
-                    </div>
-                    <h3 
-                      style={{ 
-                        fontSize: '16px', 
-                        fontWeight: 700, 
-                        color: '#222719', 
-                        margin: '0 0 8px 0',
-                        lineHeight: 1.4
-                      }}
-                    >
-                      {doc.title}
-                    </h3>
-                    <p 
-                      style={{ 
-                        fontSize: '13px', 
-                        color: '#777', 
-                        margin: '0 0 20px 0',
-                        lineHeight: 1.5 
-                      }}
-                    >
-                      {doc.description}
-                    </p>
-                  </div>
+            {documents.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                {t.lang === 'ru' ? 'Нет доступных документов' : t.lang === 'kz' ? 'Құжаттар қолжетімсіз' : 'No documents available'}
+              </div>
+            ) : (
+              <div 
+                style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                  gap: '24px' 
+                }}
+              >
+                {documents.map((doc) => (
                   <div 
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
+                    key={doc.id}
+                    style={{
+                      backgroundColor: '#fff',
+                      borderRadius: '20px',
+                      padding: '24px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+                      border: '1px solid rgba(0,0,0,0.05)',
+                      display: 'flex',
+                      flexDirection: 'column',
                       justifyContent: 'space-between',
-                      borderTop: '1px solid #f0f0f0',
-                      paddingTop: '12px',
-                      fontSize: '12px',
-                      color: '#6E8B51',
-                      fontWeight: 600
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      cursor: 'pointer'
                     }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.06)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.02)';
+                    }}
+                    onClick={() => setSelectedDoc(doc)}
                   >
-                    <span>{doc.fileName}</span>
-                    <span>⬇️</span>
+                    <div>
+                      <div 
+                        style={{ 
+                          fontSize: '36px', 
+                          marginBottom: '16px',
+                          display: 'inline-block',
+                          color: '#6E8B51' 
+                        }}
+                      >
+                        📄
+                      </div>
+                      <h3 
+                        style={{ 
+                          fontSize: '16px', 
+                          fontWeight: 700, 
+                          color: '#222719', 
+                          margin: '0 0 8px 0',
+                          lineHeight: 1.4
+                        }}
+                      >
+                        {doc.title}
+                      </h3>
+                      <p 
+                        style={{ 
+                          fontSize: '13px', 
+                          color: '#777', 
+                          margin: '0 0 20px 0',
+                          lineHeight: 1.5 
+                        }}
+                      >
+                        {doc.description}
+                      </p>
+                    </div>
+                    <div 
+                      onClick={(e) => handleDownload(doc, e)}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        borderTop: '1px solid #f0f0f0',
+                        paddingTop: '12px',
+                        fontSize: '12px',
+                        color: '#6E8B51',
+                        fontWeight: 600,
+                        transition: 'color 0.2s'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#222719'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = '#6E8B51'; }}
+                    >
+                      <span>{doc.fileName}</span>
+                      <span>⬇️</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
       </div>
+
+      {/* PDF View Modal */}
+      {selectedDoc && pdfBlobUrl && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            backdropFilter: 'blur(4px)',
+            padding: '24px',
+          }}
+          onClick={() => setSelectedDoc(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '1000px',
+              height: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.2)',
+              overflow: 'hidden',
+              animation: 'documentsFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '20px 28px',
+                borderBottom: '1px solid #E2EBD5',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: 'white',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#222719' }}>
+                  {selectedDoc.title}
+                </h3>
+                <span style={{ fontSize: '12px', color: '#888' }}>
+                  {selectedDoc.fileName}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedDoc(null)}
+                style={{
+                  border: 'none',
+                  backgroundColor: '#E2EBD5',
+                  color: '#222719',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d0e0bd'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#E2EBD5'; }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* PDF Render Body */}
+            <div style={{ flex: 1, backgroundColor: '#f5f5f5', position: 'relative' }}>
+              <iframe
+                src={pdfBlobUrl}
+                title={selectedDoc.title}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes documentsFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }

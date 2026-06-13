@@ -47,11 +47,22 @@ export interface ServiceRequest {
   createdAt?: Date;
 }
 
+export interface DocumentItem {
+  id?: number;
+  title: string;
+  description: string;
+  fileName: string;
+  fileData: string; // base64 encoded PDF file
+  fileType: string; // e.g. 'application/pdf'
+  uploadedAt: Date;
+}
+
 export class MemorialDatabase extends Dexie {
   pets!: Table<Pet>;
   petRequests!: Table<PetRequest>;
   services!: Table<Service>;
   serviceRequests!: Table<ServiceRequest>;
+  documents!: Table<DocumentItem>;
 
   constructor() {
     super('ZooZabotaMemorial');
@@ -71,10 +82,54 @@ export class MemorialDatabase extends Dexie {
       services: '++id, order, category',
       serviceRequests: '++id, status, serviceId, createdAt',
     });
+    this.version(4).stores({
+      pets: '++id, createdAt',
+      petRequests: '++id, status, createdAt',
+      services: '++id, order, category',
+      serviceRequests: '++id, status, serviceId, createdAt',
+      documents: '++id, title, uploadedAt',
+    });
   }
 }
 
 export const db = new MemorialDatabase();
+
+export const MOCK_PDF = 'JVBERi0xLjQKMSAwIG9iagogIDw8IC9UeXBlIC9DYXRhbG9nCiAgICAgL1BhZ2VzIDIgMCBSCiAgPj4KZW5kb2JqCjIgMCBvYmoKICA8PCAvVHlwZSAvUGFnZXMKICAgICAvS2lkcyBbIDMgMCBSIF0KICAgICAvQ291bnQgMQogID4+CmVuZG9iagozIDAgb2JqCiAgPDwgL1R5cGUgL1BhZ2UKICAgICAvUGFyZW50IDIgMCBSCiAgICAgL01lZGlhQm94IFsgMCAwIDU5NSA4NDIgXQogICAgIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDQgMCBSID4+ID4+CiAgICAgL0NvbnRlbnRzIDUgMCBSCiAgPj4KZW5kb2JqCjQgMCBvYmoKICA8PCAvVHlwZSAvRm9udAogICAgIC9TdWJ0eXBlIC9UeXBlMQogICAgIC9CYXNlRm9udCAvSGVsdmV0aWNhCiAgPj4KZW5kb2JqCjUgMCBvYmoKICA8PCAvTGVuZ3RoIDQ0ID4+CnN0cmVhbQpCVAovRjEgMjQgVGYKMTAwIDcwMCBUZAooWm9vWmFib3RhIE9mZmljaWFsIERvY3VtZW50KSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDcwIDAwMDAwIG4gCjAwMDAwMDAxNDMgMDAwMDAgbiAKMDAwMDAwMDI3MSAwMDAwMCBuIAowMDAwMDAwMzU1IDAwMDAwIG4gCnRyYWlsZXIKICA8PCAvU2l6ZSA2CiAgICAgL1Jvb3QgMSAwIFIKICA+PgpzdGFydHhyZWYKNDQ4CiUlRU9G';
+
+export const DEFAULT_DOCUMENTS: Omit<DocumentItem, 'id'>[] = [
+  {
+    title: 'Публичный договор-оферта',
+    description: 'Регулирует порядок оказания услуг мемориального комплекса.',
+    fileName: 'public_offer_zoozabota.pdf',
+    fileData: MOCK_PDF,
+    fileType: 'application/pdf',
+    uploadedAt: new Date('2026-06-13T12:00:00Z'),
+  },
+  {
+    title: 'Правила посещения комплекса',
+    description: 'Правила поведения на территории колумбария и мемориала.',
+    fileName: 'rules_and_regulations.pdf',
+    fileData: MOCK_PDF,
+    fileType: 'application/pdf',
+    uploadedAt: new Date('2026-06-13T12:00:00Z'),
+  },
+  {
+    title: 'Политика конфиденциальности',
+    description: 'Правила сбора, обработки и защиты персональных данных.',
+    fileName: 'privacy_policy_zoozabota.pdf',
+    fileData: MOCK_PDF,
+    fileType: 'application/pdf',
+    uploadedAt: new Date('2026-06-13T12:00:00Z'),
+  },
+  {
+    title: 'Устав фонда «Өмірге Үміт Бер»',
+    description: 'Учредительный документ общественного фонда.',
+    fileName: 'charter_omirge_umit_ber.pdf',
+    fileData: MOCK_PDF,
+    fileType: 'application/pdf',
+    uploadedAt: new Date('2026-06-13T12:00:00Z'),
+  },
+];
 
 // Default services to seed on first load
 export const DEFAULT_SERVICES: Omit<Service, 'id'>[] = [

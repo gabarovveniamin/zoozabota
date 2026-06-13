@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, DEFAULT_SERVICES, type PetRequest, type Service, type ServiceRequest } from '../db/memorialDB';
+import { db, DEFAULT_SERVICES, DEFAULT_DOCUMENTS, type PetRequest, type Service, type ServiceRequest, type DocumentItem } from '../db/memorialDB';
 
 const ADMIN_PASSWORD = 'admin123'; // Простой пароль для демо
 
@@ -12,6 +12,22 @@ type ServiceFormData = {
   image: string;
   price: string;
   category: string;
+};
+
+type DocumentFormData = {
+  title: string;
+  description: string;
+  fileName: string;
+  fileData: string;
+  fileType: string;
+};
+
+const emptyDocForm: DocumentFormData = {
+  title: '',
+  description: '',
+  fileName: '',
+  fileData: '',
+  fileType: '',
 };
 
 const emptyForm: ServiceFormData = {
@@ -296,10 +312,105 @@ const ServiceFormFields = ({
   );
 };
 
+interface DocumentFormFieldsProps {
+  form: DocumentFormData;
+  setForm: React.Dispatch<React.SetStateAction<DocumentFormData>>;
+  onSubmit: (e: React.FormEvent) => void;
+  onCancel: () => void;
+  title: string;
+  isEdit: boolean;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const DocumentFormFields = ({
+  form,
+  setForm,
+  onSubmit,
+  onCancel,
+  title,
+  isEdit,
+  onFileChange,
+}: DocumentFormFieldsProps) => {
+  return (
+    <div
+      style={{
+        backgroundColor: '#f7faf3',
+        padding: '24px',
+        borderRadius: '14px',
+        border: '2px solid #D8E8C8',
+        marginBottom: '24px',
+      }}
+    >
+      <h3 style={{ margin: '0 0 20px', color: '#222719', fontSize: '17px' }}>{title}</h3>
+      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>
+            Название документа *
+          </label>
+          <input
+            type="text"
+            placeholder="Публичная оферта"
+            required
+            value={form.title}
+            onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+            style={inputStyle}
+          />
+        </div>
+
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>
+            Описание документа
+          </label>
+          <textarea
+            placeholder="Краткое описание содержимого..."
+            value={form.description}
+            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+            rows={3}
+            style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
+          />
+        </div>
+
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>
+            {isEdit ? 'Заменить PDF-файл (необязательно)' : 'Выберите PDF-файл *'}
+          </label>
+          <input
+            type="file"
+            accept="application/pdf"
+            required={!isEdit}
+            onChange={onFileChange}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '8px',
+              border: '1.5px solid #D8E8C8',
+              backgroundColor: '#fff',
+              fontSize: '13px',
+            }}
+          />
+          {form.fileName && (
+            <div style={{ fontSize: '12px', color: '#6E8B51', marginTop: '6px', fontWeight: 500 }}>
+              Выбранный файл: {form.fileName}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
+          <button type="submit" style={btnPrimary}>
+            {isEdit ? 'Сохранить' : 'Добавить'}
+          </button>
+          <button type="button" onClick={onCancel} style={btnSecondary}>
+            Отмена
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 export function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [tab, setTab] = useState<'requests' | 'service-requests' | 'services'>('requests');
+  const [tab, setTab] = useState<'requests' | 'service-requests' | 'services' | 'documents'>('requests');
 
   // Pet Requests
   const [requests, setRequests] = useState<PetRequest[]>([]);
@@ -318,13 +429,42 @@ export function Admin() {
   const [editForm, setEditForm] = useState<ServiceFormData>(emptyForm);
   const [editPreview, setEditPreview] = useState('');
 
+  // Documents
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [showAddDocForm, setShowAddDocForm] = useState(false);
+  const [addDocForm, setAddDocForm] = useState<DocumentFormData>(emptyDocForm);
+  const [editingDocId, setEditingDocId] = useState<number | null>(null);
+  const [editDocForm, setEditDocForm] = useState<DocumentFormData>(emptyDocForm);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+
   useEffect(() => {
     if (isAuthenticated) {
       loadRequests();
       loadServices();
       loadServiceRequests();
+      loadDocuments();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (selectedDoc) {
+      const byteCharacters = atob(selectedDoc.fileData);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: selectedDoc.fileType });
+      const url = URL.createObjectURL(blob);
+      setPdfBlobUrl(url);
+
+      return () => {
+        URL.revokeObjectURL(url);
+        setPdfBlobUrl(null);
+      };
+    }
+  }, [selectedDoc]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,6 +530,115 @@ export function Admin() {
     }
     setServices(allServices.sort((a, b) => a.order - b.order));
   };
+
+  // ===== DOCUMENTS =====
+  const loadDocuments = async () => {
+    let count = await db.documents.count();
+    if (count === 0) {
+      await db.documents.bulkAdd(DEFAULT_DOCUMENTS);
+    }
+    const allDocs = await db.documents.toArray();
+    setDocuments(allDocs.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime()));
+  };
+
+  const handleDocFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setForm: React.Dispatch<React.SetStateAction<DocumentFormData>>
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = (event.target?.result as string).split(',')[1];
+        setForm((prev) => ({
+          ...prev,
+          fileName: file.name,
+          fileType: file.type || 'application/pdf',
+          fileData: base64,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addDocForm.title || !addDocForm.fileData) {
+      alert('Пожалуйста, заполните название и выберите PDF-файл');
+      return;
+    }
+    await db.documents.add({
+      title: addDocForm.title,
+      description: addDocForm.description,
+      fileName: addDocForm.fileName,
+      fileData: addDocForm.fileData,
+      fileType: addDocForm.fileType,
+      uploadedAt: new Date(),
+    });
+    setShowAddDocForm(false);
+    setAddDocForm(emptyDocForm);
+    loadDocuments();
+  };
+
+  const startEditDoc = (doc: DocumentItem) => {
+    if (!doc.id) return;
+    setEditingDocId(doc.id);
+    setEditDocForm({
+      title: doc.title,
+      description: doc.description,
+      fileName: doc.fileName,
+      fileData: doc.fileData,
+      fileType: doc.fileType,
+    });
+  };
+
+  const handleSaveEditDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDocId) return;
+    if (!editDocForm.title) {
+      alert('Пожалуйста, заполните название');
+      return;
+    }
+    await db.documents.update(editingDocId, {
+      title: editDocForm.title,
+      description: editDocForm.description,
+      fileName: editDocForm.fileName,
+      fileData: editDocForm.fileData,
+      fileType: editDocForm.fileType,
+    });
+    setEditingDocId(null);
+    setEditDocForm(emptyDocForm);
+    loadDocuments();
+  };
+
+  const deleteDoc = async (id: number | undefined) => {
+    if (!id) return;
+    if (confirm('Вы уверены, что хотите удалить этот документ?')) {
+      await db.documents.delete(id);
+      loadDocuments();
+    }
+  };
+
+  const handleDocDownload = (doc: DocumentItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const byteCharacters = atob(doc.fileData);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: doc.fileType });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = doc.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
 
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -635,6 +884,22 @@ export function Admin() {
           }}
         >
           Памятники ({services.length})
+        </button>
+        <button
+          onClick={() => setTab('documents')}
+          style={{
+            backgroundColor: tab === 'documents' ? '#d0e0bd' : 'transparent',
+            color: tab === 'documents' ? '#222719' : '#556042',
+            border: 'none',
+            padding: '10px 24px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600,
+            borderRadius: '8px',
+            transition: 'all 0.2s',
+          }}
+        >
+          Документы ({documents.length})
         </button>
       </div>
 
@@ -1032,6 +1297,261 @@ export function Admin() {
           )}
         </div>
       )}
+
+      {/* ===== DOCUMENTS TAB ===== */}
+      {tab === 'documents' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ color: '#222719', margin: 0, fontSize: '20px' }}>Управление документами</h2>
+            <button
+              onClick={() => { setShowAddDocForm(!showAddDocForm); setAddDocForm(emptyDocForm); }}
+              style={btnPrimary}
+            >
+              {showAddDocForm ? '✕ Отмена' : '+ Добавить документ'}
+            </button>
+          </div>
+
+          {/* Add Form */}
+          {showAddDocForm && (
+            <DocumentFormFields
+              form={addDocForm}
+              setForm={setAddDocForm}
+              onSubmit={handleAddDoc}
+              onCancel={() => { setShowAddDocForm(false); setAddDocForm(emptyDocForm); }}
+              title="Новый документ"
+              isEdit={false}
+              onFileChange={(e) => handleDocFileChange(e, setAddDocForm)}
+            />
+          )}
+
+          {/* Documents List */}
+          {documents.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: '#999', backgroundColor: 'white', borderRadius: '14px', border: '2px dashed #E2EBD5' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
+              <p style={{ margin: 0, fontSize: '16px' }}>Документы не загружены</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {documents.map((doc) => (
+                <div key={doc.id}>
+                  {/* Edit Form */}
+                  {editingDocId === doc.id ? (
+                    <DocumentFormFields
+                      form={editDocForm}
+                      setForm={setEditDocForm}
+                      onSubmit={handleSaveEditDoc}
+                      onCancel={() => { setEditingDocId(null); setEditDocForm(emptyDocForm); }}
+                      title={`Редактирование: ${doc.title}`}
+                      isEdit={true}
+                      onFileChange={(e) => handleDocFileChange(e, setEditDocForm)}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        backgroundColor: 'white',
+                        border: '2px solid #E2EBD5',
+                        borderRadius: '14px',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        gap: '0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                        transition: 'box-shadow 0.2s',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => setSelectedDoc(doc)}
+                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.08)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; }}
+                    >
+                      {/* PDF Icon/Thumbnail */}
+                      <div
+                        style={{
+                          width: '120px',
+                          backgroundColor: '#E2EBD5',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '40px',
+                          userSelect: 'none',
+                        }}
+                      >
+                        📄
+                      </div>
+
+                      {/* Doc Info */}
+                      <div style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '6px' }}>
+                        <h3 style={{ margin: 0, color: '#222719', fontSize: '16px', fontWeight: 700 }}>
+                          {doc.title}
+                        </h3>
+                        {doc.description && (
+                          <p style={{ margin: 0, color: '#556042', fontSize: '13px', lineHeight: 1.5 }}>
+                            {doc.description}
+                          </p>
+                        )}
+                        <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                          <span>Имя файла: {doc.fileName}</span>
+                          <span>Загружен: {doc.uploadedAt?.toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {/* Doc Actions */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          padding: '16px',
+                          justifyContent: 'center',
+                          borderLeft: '1px solid #E2EBD5',
+                          flexShrink: 0,
+                        }}
+                        onClick={(e) => e.stopPropagation()} // prevent opening pdf view when clicking action buttons
+                      >
+                        <button
+                          onClick={(e) => handleDocDownload(doc, e)}
+                          style={{
+                            ...btnSecondary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          ⬇️ Скачать
+                        </button>
+                        <button
+                          onClick={() => startEditDoc(doc)}
+                          style={{
+                            ...btnSecondary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          ✏️ Редактировать
+                        </button>
+                        <button
+                          onClick={() => deleteDoc(doc.id)}
+                          style={{ ...btnDanger, whiteSpace: 'nowrap' }}
+                        >
+                          🗑️ Удалить
+                        </button>
+                      </div>
+
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* PDF View Modal */}
+      {selectedDoc && pdfBlobUrl && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            backdropFilter: 'blur(4px)',
+            padding: '24px',
+          }}
+          onClick={() => setSelectedDoc(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '1000px',
+              height: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.2)',
+              overflow: 'hidden',
+              animation: 'adminDocFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '20px 28px',
+                borderBottom: '1px solid #E2EBD5',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: 'white',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#222719' }}>
+                  {selectedDoc.title}
+                </h3>
+                <span style={{ fontSize: '12px', color: '#888' }}>
+                  {selectedDoc.fileName}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedDoc(null)}
+                style={{
+                  border: 'none',
+                  backgroundColor: '#E2EBD5',
+                  color: '#222719',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d0e0bd'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#E2EBD5'; }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* PDF Render Body */}
+            <div style={{ flex: 1, backgroundColor: '#f5f5f5', position: 'relative' }}>
+              <iframe
+                src={pdfBlobUrl}
+                title={selectedDoc.title}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes adminDocFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }
