@@ -66,6 +66,16 @@ CREATE TABLE IF NOT EXISTS documents (
   uploaded_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  phone VARCHAR(50) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create trigram indexes for fuzzy search on pets
 CREATE INDEX IF NOT EXISTS idx_pets_name_trgm ON pets USING gin (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_pets_breed_trgm ON pets USING gin (breed gin_trgm_ops);
@@ -79,3 +89,4 @@ CREATE INDEX IF NOT EXISTS idx_pet_requests_status ON pet_requests(status);
 CREATE INDEX IF NOT EXISTS idx_services_sort_order ON services(sort_order);
 CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(status);
 CREATE INDEX IF NOT EXISTS idx_documents_uploaded_at ON documents(uploaded_at);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);

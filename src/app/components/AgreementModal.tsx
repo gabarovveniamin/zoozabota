@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '../i18n/LangContext';
+import { authApi } from '../db/api';
 
 export function AgreementModal() {
   const { t } = useLang();
@@ -95,48 +96,60 @@ export function AgreementModal() {
     setPhone(formatted);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (!firstName.trim() || !lastName.trim() || !phone.trim() || !password.trim()) {
       setError(auth.errorFields);
       return;
     }
 
-    const profile = { firstName, lastName, phone, password };
-    localStorage.setItem('user_profile', JSON.stringify(profile));
-    localStorage.setItem('user_registered', 'true');
-    localStorage.setItem('user_logged_in', 'true');
-    localStorage.setItem('agreement_accepted', 'true');
+    try {
+      const profile = await authApi.register({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim(),
+        password: password.trim(),
+      });
 
-    dispatchAuthChange();
-    setIsOpen(false);
-    document.body.style.overflow = '';
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      localStorage.setItem('user_registered', 'true');
+      localStorage.setItem('user_logged_in', 'true');
+      localStorage.setItem('agreement_accepted', 'true');
+
+      dispatchAuthChange();
+      setIsOpen(false);
+      document.body.style.overflow = '';
+    } catch (err: any) {
+      console.error('Registration failed:', err);
+      const msg = err.message || 'Ошибка регистрации';
+      const cleanMsg = msg.replace(/^API error \d+: /, '');
+      setError(cleanMsg);
+    }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!phone.trim() || !password.trim()) {
+      setError(auth.errorFields);
+      return;
+    }
 
     try {
-      const profileStr = localStorage.getItem('user_profile');
-      if (!profileStr) {
-        setError(auth.errorIncorrect);
-        return;
-      }
+      const profile = await authApi.login({
+        phone: phone.trim(),
+        password: password.trim(),
+      });
 
-      const profile = JSON.parse(profileStr);
-      const cleanInputPhone = phone.replace(/\D/g, '');
-      const cleanStoredPhone = profile.phone.replace(/\D/g, '');
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      localStorage.setItem('user_registered', 'true');
+      localStorage.setItem('user_logged_in', 'true');
+      localStorage.setItem('agreement_accepted', 'true');
 
-      if (cleanInputPhone === cleanStoredPhone && password === profile.password) {
-        localStorage.setItem('user_logged_in', 'true');
-        localStorage.setItem('agreement_accepted', 'true');
-        dispatchAuthChange();
-        setIsOpen(false);
-        document.body.style.overflow = '';
-      } else {
-        setError(auth.errorIncorrect);
-      }
+      dispatchAuthChange();
+      setIsOpen(false);
+      document.body.style.overflow = '';
     } catch (err) {
       console.error('Login failed:', err);
       setError(auth.errorIncorrect);

@@ -133,3 +133,18 @@ export const adminApi = {
       body: JSON.stringify({ password }),
     }),
 };
+
+// ===== USER AUTH =====
+export const authApi = {
+  register: (user: { firstName: string; lastName: string; phone: string; password: string }): Promise<{ firstName: string; lastName: string; phone: string }> =>
+    request<{ firstName: string; lastName: string; phone: string }>('/register', {
+      method: 'POST',
+      body: JSON.stringify(user),
+    }),
+
+  login: (credentials: { phone: string; password: string }): Promise<{ firstName: string; lastName: string; phone: string }> =>
+    request<{ firstName: string; lastName: string; phone: string }>('/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    }),
+};

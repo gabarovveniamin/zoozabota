@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useLang, type Lang } from '../i18n/LangContext';
+import { authApi } from '../db/api';
 
 const LANGUAGES: { code: Lang; label: string; flag: string }[] = [
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
@@ -580,28 +581,22 @@ function LoginModal({ onClose }: { onClose: () => void }) {
     setPhone(formatted);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     try {
-      const profileStr = localStorage.getItem('user_profile');
-      if (!profileStr) {
-        setError(auth.errorIncorrect);
-        return;
-      }
+      const profile = await authApi.login({
+        phone: phone.trim(),
+        password: password.trim(),
+      });
 
-      const profile = JSON.parse(profileStr);
-      const cleanInputPhone = phone.replace(/\D/g, '');
-      const cleanStoredPhone = profile.phone.replace(/\D/g, '');
-
-      if (cleanInputPhone === cleanStoredPhone && password === profile.password) {
-        localStorage.setItem('user_logged_in', 'true');
-        window.dispatchEvent(new Event('user_auth_change'));
-        onClose();
-      } else {
-        setError(auth.errorIncorrect);
-      }
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      localStorage.setItem('user_registered', 'true');
+      localStorage.setItem('user_logged_in', 'true');
+      
+      window.dispatchEvent(new Event('user_auth_change'));
+      onClose();
     } catch (err) {
       console.error('Login failed:', err);
       setError(auth.errorIncorrect);
