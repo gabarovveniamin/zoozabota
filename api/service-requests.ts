@@ -2,8 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { neon } from '@neondatabase/serverless';
 import { executeQuery } from './db/init';
 
-const sql = neon(process.env.DATABASE_URL!);
-
 function mapRow(r: any) {
   return {
     id: r.id,
@@ -23,6 +21,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (!databaseUrl) {
+    return res.status(500).json({ error: 'Neither DATABASE_URL nor POSTGRES_URL environment variables are defined. Please link your Neon database in Vercel settings.' });
+  }
+  const sql = neon(databaseUrl);
 
   try {
     if (req.method === 'GET') {
