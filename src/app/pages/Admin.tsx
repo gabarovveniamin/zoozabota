@@ -484,6 +484,7 @@ export function Admin() {
   const [editDocForm, setEditDocForm] = useState<DocumentFormData>(emptyDocForm);
   const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [dbError, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -630,8 +631,10 @@ export function Admin() {
     try {
       const allRequests = await petRequestsApi.getAll();
       setRequests(allRequests);
-    } catch (err) {
+      setDbError(null);
+    } catch (err: any) {
       console.error('Failed to load pet requests:', err);
+      setDbError(err.message || String(err));
     }
   };
 
@@ -640,8 +643,10 @@ export function Admin() {
     try {
       const all = await serviceRequestsApi.getAll();
       setServiceRequests(all.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()));
-    } catch (err) {
+      setDbError(null);
+    } catch (err: any) {
       console.error('Failed to load service requests:', err);
+      setDbError(err.message || String(err));
     }
   };
 
@@ -650,8 +655,9 @@ export function Admin() {
     try {
       await serviceRequestsApi.update(id, { status });
       loadServiceRequests();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update service request:', err);
+      alert('Ошибка при обновлении статуса заявки: ' + (err.message || String(err)));
     }
   };
 
@@ -674,8 +680,9 @@ export function Admin() {
         await petRequestsApi.update(id, { status: 'approved' });
         loadRequests();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to approve pet request:', err);
+      alert('Ошибка при одобрении заявки: ' + (err.message || String(err)));
     }
   };
 
@@ -684,8 +691,9 @@ export function Admin() {
     try {
       await petRequestsApi.update(id, { status: 'rejected' });
       loadRequests();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to reject pet request:', err);
+      alert('Ошибка при отклонении заявки: ' + (err.message || String(err)));
     }
   };
 
@@ -694,8 +702,10 @@ export function Admin() {
     try {
       const allServices = await servicesApi.getAll();
       setServices(allServices.sort((a, b) => a.order - b.order));
-    } catch (err) {
+      setDbError(null);
+    } catch (err: any) {
       console.error('Failed to load services:', err);
+      setDbError(err.message || String(err));
     }
   };
 
@@ -704,8 +714,10 @@ export function Admin() {
     try {
       const allDocs = await documentsApi.getAll();
       setDocuments(allDocs.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()));
-    } catch (err) {
+      setDbError(null);
+    } catch (err: any) {
       console.error('Failed to load documents:', err);
+      setDbError(err.message || String(err));
     }
   };
 
@@ -990,6 +1002,17 @@ export function Admin() {
           Выйти
         </button>
       </div>
+
+      {/* DB Connection Error Alert */}
+      {dbError && (
+        <div style={{ backgroundColor: '#fde8e8', color: '#e53e3e', padding: '16px', borderRadius: '12px', marginBottom: '32px', border: '1px solid #fecaca', fontWeight: 500 }}>
+          ⚠️ Ошибка подключения к базе данных: {dbError}
+          <br />
+          <span style={{ fontSize: '13px', fontWeight: 'normal', color: '#c53030' }}>
+            Пожалуйста, убедитесь, что переменная окружения DATABASE_URL настроена на Vercel или в .env.local, и проект запущен через vercel dev (для локальной разработки).
+          </span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '32px', backgroundColor: '#E2EBD5', padding: '4px', borderRadius: '12px', width: 'fit-content' }}>
