@@ -8,7 +8,7 @@ export function Services() {
   const { t, lang } = useLang();
   const { services: srv } = t;
 
-  const [activeFilter, setActiveFilter] = useState(srv.filters[0]);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -23,10 +23,10 @@ export function Services() {
     return s.description[lang] || s.description['ru'] || '';
   };
 
-  // Reset filter when language changes
+  // Reset filter to 'All' when language changes
   useEffect(() => {
-    setActiveFilter(srv.filters[0]);
-  }, [srv.filters[0]]);
+    setActiveFilter(null);
+  }, [lang]);
 
   useEffect(() => {
     const loadServices = async () => {
@@ -42,18 +42,42 @@ export function Services() {
     loadServices();
   }, []);
 
-  // Map translated filter names to DB category values
-  const filterMap: Record<string, string | null> = {
-    [srv.filters[0]]: null,
-    [srv.filters[1]]: 'Гранитные',
-    [srv.filters[2]]: 'Мраморные',
-    [srv.filters[3]]: 'Деревянные',
-    [srv.filters[4]]: 'Индивидуальные',
+  // Get all unique categories present in the services
+  const dbCategories = Array.from(new Set(services.map(s => s.category).filter(Boolean))) as string[];
+  
+  // Sort categories: standard first, then custom alphabetically
+  const standardOrder = ['Гранитные', 'Мраморные', 'Деревянные', 'Индивидуальные'];
+  dbCategories.sort((a, b) => {
+    const idxA = standardOrder.indexOf(a);
+    const idxB = standardOrder.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b);
+  });
+
+  const categoryFilters = [null, ...dbCategories];
+
+  const getCategoryLabel = (category: string | null) => {
+    if (!category) return srv.filters[0]; // "Все" / "Барлығы" / "All"
+    
+    const standardCategories: Record<string, { ru: string; kz: string; en: string }> = {
+      'Гранитные': { ru: 'Гранитные', kz: 'Гранит', en: 'Granite' },
+      'Мраморные': { ru: 'Мраморные', kz: 'Мәрмәр', en: 'Marble' },
+      'Деревянные': { ru: 'Деревянные', kz: 'Ағаш', en: 'Wood' },
+      'Индивидуальные': { ru: 'Индивидуальные', kz: 'Жеке', en: 'Custom' },
+    };
+
+    const matched = standardCategories[category];
+    if (matched) {
+      return matched[lang] || matched['ru'];
+    }
+    return category;
   };
 
-  const filtered = filterMap[activeFilter] === null
+  const filtered = activeFilter === null
     ? services
-    : services.filter((s) => s.category === filterMap[activeFilter]);
+    : services.filter((s) => s.category === activeFilter);
 
   return (
     <div>
@@ -73,12 +97,12 @@ export function Services() {
             boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
           }}
         >
-          {srv.filters.map((filter) => {
-            const isActive = activeFilter === filter;
+          {categoryFilters.map((cat) => {
+            const isActive = activeFilter === cat;
             return (
               <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
+                key={cat ?? 'all'}
+                onClick={() => setActiveFilter(cat)}
                 style={{
                   padding: '8px 20px',
                   borderRadius: '20px',
@@ -91,11 +115,12 @@ export function Services() {
                   transition: 'all 0.2s',
                 }}
               >
-                {filter}{isActive && ' ✓'}
+                {getCategoryLabel(cat)}{isActive && ' ✓'}
               </button>
             );
           })}
         </div>
+
 
         {/* Monument grid */}
         {loading ? (

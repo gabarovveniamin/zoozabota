@@ -125,6 +125,14 @@ const ServiceFormFields = ({
 }: ServiceFormFieldsProps) => {
   const [activeLang, setActiveLang] = useState<'ru' | 'kz' | 'en'>('ru');
 
+  const standardCategories = ['Гранитные', 'Мраморные', 'Деревянные', 'Индивидуальные'];
+  const [isCustomCategory, setIsCustomCategory] = useState(() => {
+    return form.category !== '' && !standardCategories.includes(form.category);
+  });
+  const [customCategoryVal, setCustomCategoryVal] = useState(() => {
+    return !standardCategories.includes(form.category) ? form.category : '';
+  });
+
   return (
     <div
       style={{
@@ -179,7 +187,7 @@ const ServiceFormFields = ({
               type="text"
               placeholder="Гранит"
               value={form.tag}
-              onChange={(e) => setForm((prev) => ({ ...prev, tag: e.target.value }))}
+              onChange={(e) => setForm((prev: any) => ({ ...prev, tag: e.target.value }))}
               style={inputStyle}
             />
           </div>
@@ -193,7 +201,7 @@ const ServiceFormFields = ({
               value={form.title[activeLang]}
               onChange={(e) => {
                 const val = e.target.value;
-                setForm((prev) => ({
+                setForm((prev: any) => ({
                   ...prev,
                   title: { ...prev.title, [activeLang]: val }
                 }));
@@ -211,21 +219,44 @@ const ServiceFormFields = ({
               type="text"
               placeholder="от 45 000 ₸"
               value={form.price}
-              onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
+              onChange={(e) => setForm((prev: any) => ({ ...prev, price: e.target.value }))}
               style={inputStyle}
             />
           </div>
           <div>
             <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Категория фильтра</label>
             <select
-              value={form.category}
-              onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
+              value={isCustomCategory ? 'custom' : form.category || 'Гранитные'}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === 'custom') {
+                  setIsCustomCategory(true);
+                  setForm((prev: any) => ({ ...prev, category: customCategoryVal }));
+                } else {
+                  setIsCustomCategory(false);
+                  setForm((prev: any) => ({ ...prev, category: val }));
+                }
+              }}
               style={{ ...inputStyle, cursor: 'pointer' }}
             >
-              {CATEGORIES.map((c) => (
+              {standardCategories.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
+              <option value="custom">✏️ Своя категория...</option>
             </select>
+            {isCustomCategory && (
+              <input
+                type="text"
+                placeholder="Название вашей категории"
+                value={customCategoryVal}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCustomCategoryVal(val);
+                  setForm((prev: any) => ({ ...prev, category: val }));
+                }}
+                style={{ ...inputStyle, marginTop: '8px' }}
+              />
+            )}
           </div>
         </div>
 
@@ -414,9 +445,25 @@ export function Admin() {
 
   // Pet Requests
   const [requests, setRequests] = useState<PetRequest[]>([]);
+  const [showAddPetDirect, setShowAddPetDirect] = useState(false);
+  const [showAddPetRequest, setShowAddPetRequest] = useState(false);
+  
+  // Direct Add Pet Form
+  const emptyPetForm = { name: '', breed: '', years: '', description: '', emoji: '🐱', photo: '' };
+  const [newPetForm, setNewPetForm] = useState(emptyPetForm);
+  const [newPetPhotoPreview, setNewPetPhotoPreview] = useState('');
+
+  // Pet Request Form
+  const emptyPetRequestForm = { name: '', breed: '', years: '', description: '', emoji: '🐱', photo: '', email: '' };
+  const [newPetRequestForm, setNewPetRequestForm] = useState(emptyPetRequestForm);
+  const [newPetRequestPhotoPreview, setNewPetRequestPhotoPreview] = useState('');
 
   // Service Requests
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
+  const [showAddServiceRequest, setShowAddServiceRequest] = useState(false);
+  const [newServiceRequestForm, setNewServiceRequestForm] = useState({
+    serviceId: '', name: '', phone: '', email: '', comment: ''
+  });
 
   // Services
   const [services, setServices] = useState<Service[]>([]);
@@ -465,6 +512,108 @@ export function Admin() {
       };
     }
   }, [selectedDoc]);
+
+  const handleFormPhotoChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setForm: any,
+    setPreview: any
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setPreview(base64);
+        setForm((prev: any) => ({ ...prev, photo: base64 }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDirectAddPet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPetForm.name || !newPetForm.breed || !newPetForm.years) {
+      alert('Пожалуйста, заполните Имя, Породу и Годы');
+      return;
+    }
+    try {
+      await petsApi.add({
+        name: newPetForm.name,
+        breed: newPetForm.breed,
+        years: newPetForm.years,
+        description: newPetForm.description || undefined,
+        emoji: newPetForm.emoji,
+        photo: newPetForm.photo || undefined,
+        createdAt: new Date().toISOString(),
+      });
+      alert('Питомец успешно добавлен напрямую в стену памяти!');
+      setNewPetForm(emptyPetForm);
+      setNewPetPhotoPreview('');
+      setShowAddPetDirect(false);
+    } catch (err) {
+      console.error('Failed to direct add pet:', err);
+      alert('Ошибка добавления питомца');
+    }
+  };
+
+  const handleCreatePetRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPetRequestForm.name || !newPetRequestForm.breed || !newPetRequestForm.years) {
+      alert('Пожалуйста, заполните Имя, Породу и Годы');
+      return;
+    }
+    try {
+      await petRequestsApi.add({
+        name: newPetRequestForm.name,
+        breed: newPetRequestForm.breed,
+        years: newPetRequestForm.years,
+        description: newPetRequestForm.description || undefined,
+        emoji: newPetRequestForm.emoji,
+        photo: newPetRequestForm.photo || undefined,
+        email: newPetRequestForm.email || undefined,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+      alert('Заявка на добавление питомца успешно создана!');
+      setNewPetRequestForm(emptyPetRequestForm);
+      setNewPetRequestPhotoPreview('');
+      setShowAddPetRequest(false);
+      loadRequests();
+    } catch (err) {
+      console.error('Failed to create pet request:', err);
+      alert('Ошибка создания заявки');
+    }
+  };
+
+  const handleCreateServiceRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newServiceRequestForm.serviceId || !newServiceRequestForm.name || !newServiceRequestForm.phone) {
+      alert('Пожалуйста, выберите Памятник и укажите Имя и Телефон клиента');
+      return;
+    }
+    const matchedService = services.find(s => s.id === Number(newServiceRequestForm.serviceId));
+    if (!matchedService) return;
+
+    try {
+      await serviceRequestsApi.add({
+        serviceId: matchedService.id!,
+        serviceTitle: getServiceTitle(matchedService),
+        name: newServiceRequestForm.name,
+        phone: newServiceRequestForm.phone,
+        email: newServiceRequestForm.email || undefined,
+        comment: newServiceRequestForm.comment || undefined,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+      alert('Заявка на памятник успешно добавлена!');
+      setNewServiceRequestForm({ serviceId: '', name: '', phone: '', email: '', comment: '' });
+      setShowAddServiceRequest(false);
+      loadServiceRequests();
+    } catch (err) {
+      console.error('Failed to create service request:', err);
+      alert('Ошибка добавления заявки');
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -949,6 +1098,119 @@ export function Admin() {
       {/* ===== REQUESTS TAB ===== */}
       {tab === 'requests' && (
         <div>
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => { setShowAddPetDirect(!showAddPetDirect); setShowAddPetRequest(false); }}
+              style={btnPrimary}
+            >
+              {showAddPetDirect ? '✕ Отмена' : '🐾 Добавить питомца напрямую'}
+            </button>
+            <button
+              onClick={() => { setShowAddPetRequest(!showAddPetRequest); setShowAddPetDirect(false); }}
+              style={btnSecondary}
+            >
+              {showAddPetRequest ? '✕ Отмена' : '📝 Создать заявку питомца'}
+            </button>
+          </div>
+
+          {/* Form for Direct Add Pet */}
+          {showAddPetDirect && (
+            <form onSubmit={handleDirectAddPet} style={{ backgroundColor: '#f7faf3', padding: '24px', borderRadius: '14px', border: '2px solid #D8E8C8', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h3 style={{ margin: '0 0 10px', color: '#222719', fontSize: '16px' }}>Новый питомец на Стене Памяти</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Имя питомца *</label>
+                  <input type="text" required placeholder="Шарик" value={newPetForm.name} onChange={(e) => setNewPetForm(prev => ({ ...prev, name: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Порода *</label>
+                  <input type="text" required placeholder="Овчарка" value={newPetForm.breed} onChange={(e) => setNewPetForm(prev => ({ ...prev, breed: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Годы жизни *</label>
+                  <input type="text" required placeholder="2010 — 2024" value={newPetForm.years} onChange={(e) => setNewPetForm(prev => ({ ...prev, years: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Эмодзи *</label>
+                  <select value={newPetForm.emoji} onChange={(e) => setNewPetForm(prev => ({ ...prev, emoji: e.target.value }))} style={inputStyle}>
+                    <option value="🐱">🐱 Кот</option>
+                    <option value="🐶">🐶 Собака</option>
+                    <option value="🐹">🐹 Хомяк</option>
+                    <option value="🐰">🐰 Кролик</option>
+                    <option value="🐦">🐦 Птица</option>
+                    <option value="🦎">🦎 Рептилия</option>
+                    <option value="🐾">🐾 Лапки</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Эпитафия / Описание</label>
+                <textarea placeholder="Помним, любим, скорбим..." value={newPetForm.description} onChange={(e) => setNewPetForm(prev => ({ ...prev, description: e.target.value }))} style={{ ...inputStyle, minHeight: '80px', fontFamily: 'inherit' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Фото питомца</label>
+                <input type="file" accept="image/*" onChange={(e) => handleFormPhotoChange(e, setNewPetForm, setNewPetPhotoPreview)} style={inputStyle} />
+                {newPetPhotoPreview && <img src={newPetPhotoPreview} alt="Preview" style={{ width: '80px', height: '80px', borderRadius: '10px', objectFit: 'cover', marginTop: '10px' }} />}
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button type="submit" style={btnPrimary}>Добавить питомца</button>
+                <button type="button" onClick={() => { setShowAddPetDirect(false); setNewPetForm(emptyPetForm); setNewPetPhotoPreview(''); }} style={btnSecondary}>Отмена</button>
+              </div>
+            </form>
+          )}
+
+          {/* Form for Creating Pet Request */}
+          {showAddPetRequest && (
+            <form onSubmit={handleCreatePetRequest} style={{ backgroundColor: '#f7faf3', padding: '24px', borderRadius: '14px', border: '2px solid #D8E8C8', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h3 style={{ margin: '0 0 10px', color: '#222719', fontSize: '16px' }}>Новая заявка на добавление питомца</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Имя питомца *</label>
+                  <input type="text" required placeholder="Шарик" value={newPetRequestForm.name} onChange={(e) => setNewPetRequestForm(prev => ({ ...prev, name: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Порода *</label>
+                  <input type="text" required placeholder="Овчарка" value={newPetRequestForm.breed} onChange={(e) => setNewPetRequestForm(prev => ({ ...prev, breed: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Годы жизни *</label>
+                  <input type="text" required placeholder="2010 — 2024" value={newPetRequestForm.years} onChange={(e) => setNewPetRequestForm(prev => ({ ...prev, years: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Эмодзи *</label>
+                  <select value={newPetRequestForm.emoji} onChange={(e) => setNewPetRequestForm(prev => ({ ...prev, emoji: e.target.value }))} style={inputStyle}>
+                    <option value="🐱">🐱 Кот</option>
+                    <option value="🐶">🐶 Собака</option>
+                    <option value="🐹">🐹 Хомяк</option>
+                    <option value="🐰">🐰 Кролик</option>
+                    <option value="🐦">🐦 Птица</option>
+                    <option value="🦎">🦎 Рептилия</option>
+                    <option value="🐾">🐾 Лапки</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Email хозяина (для уведомлений)</label>
+                  <input type="email" placeholder="owner@example.com" value={newPetRequestForm.email} onChange={(e) => setNewPetRequestForm(prev => ({ ...prev, email: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Эпитафия / Описание</label>
+                <textarea placeholder="Помним, любим, скорбим..." value={newPetRequestForm.description} onChange={(e) => setNewPetRequestForm(prev => ({ ...prev, description: e.target.value }))} style={{ ...inputStyle, minHeight: '80px', fontFamily: 'inherit' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Фото питомца</label>
+                <input type="file" accept="image/*" onChange={(e) => handleFormPhotoChange(e, setNewPetRequestForm, setNewPetRequestPhotoPreview)} style={inputStyle} />
+                {newPetRequestPhotoPreview && <img src={newPetRequestPhotoPreview} alt="Preview" style={{ width: '80px', height: '80px', borderRadius: '10px', objectFit: 'cover', marginTop: '10px' }} />}
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button type="submit" style={btnPrimary}>Создать заявку</button>
+                <button type="button" onClick={() => { setShowAddPetRequest(false); setNewPetRequestForm(emptyPetRequestForm); setNewPetRequestPhotoPreview(''); }} style={btnSecondary}>Отмена</button>
+              </div>
+            </form>
+          )}
+
           <h2 style={{ color: '#222719', marginBottom: '20px', fontSize: '20px' }}>Новые заявки</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
             {requests.filter((r) => r.status === 'pending').map((request) => (
@@ -1006,192 +1268,214 @@ export function Admin() {
             ))}
             {requests.filter((r) => r.status === 'pending').length === 0 && (
               <div style={{ textAlign: 'center', padding: '60px', color: '#999', backgroundColor: 'white', borderRadius: '14px', border: '2px dashed #E2EBD5' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>📭</div>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
                 <p style={{ margin: 0, fontSize: '16px' }}>Нет новых заявок</p>
               </div>
             )}
           </div>
 
-          {requests.filter((r) => r.status !== 'pending').length > 0 && (
-            <div style={{ marginTop: '40px' }}>
-              <h3 style={{ color: '#222719', marginBottom: '16px', fontSize: '18px' }}>История</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
-                {requests.filter((r) => r.status !== 'pending').map((request) => (
-                  <div
-                    key={request.id}
+          <h2 style={{ color: '#222719', marginTop: '40px', marginBottom: '20px', fontSize: '20px' }}>История заявок</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+            {requests.filter((r) => r.status !== 'pending').map((request) => (
+              <div
+                key={request.id}
+                style={{
+                  backgroundColor: '#fafafa',
+                  border: '1px solid #E2EBD5',
+                  borderRadius: '14px',
+                  padding: '20px',
+                  display: 'flex',
+                  gap: '20px',
+                  alignItems: 'center',
+                  opacity: 0.8,
+                }}
+              >
+                <div
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    backgroundColor: '#E2EBD5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '30px',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {request.photo ? (
+                    <img src={request.photo} alt={request.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    request.emoji
+                  )}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: '0 0 4px', color: '#222719', fontSize: '16px' }}>{request.name}</h3>
+                  <p style={{ margin: '0', color: '#556042', fontSize: '13px' }}><strong>Порода:</strong> {request.breed}</p>
+                </div>
+
+                <div>
+                  <span
                     style={{
-                      backgroundColor: request.status === 'approved' ? '#f0f8e8' : '#fff0f0',
-                      border: `2px solid ${request.status === 'approved' ? '#C8DFA0' : '#ffcccc'}`,
-                      borderRadius: '10px',
-                      padding: '12px 16px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      backgroundColor: request.status === 'approved' ? '#E2F0D9' : '#FCE4D6',
+                      color: request.status === 'approved' ? '#385723' : '#C65911',
                     }}
                   >
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 600, color: '#222719' }}>{request.name}</p>
-                      <p style={{ margin: '4px 0 0', color: '#556042', fontSize: '13px' }}>
-                        {request.status === 'approved' ? '✓ Одобрено' : '✕ Отклонено'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                    {request.status === 'approved' ? 'Одобрена' : 'Отклонена'}
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
+            ))}
+            {requests.filter((r) => r.status !== 'pending').length === 0 && (
+              <p style={{ textAlign: 'center', color: '#999', margin: '20px 0' }}>История пуста</p>
+            )}
+          </div>
         </div>
       )}
 
       {/* ===== SERVICE REQUESTS TAB ===== */}
       {tab === 'service-requests' && (
         <div>
-          <h2 style={{ color: '#222719', marginBottom: '20px', fontSize: '20px' }}>Заявки на памятники</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h2 style={{ color: '#222719', margin: 0, fontSize: '20px' }}>Заявки на памятники</h2>
+            <button
+              onClick={() => setShowAddServiceRequest(!showAddServiceRequest)}
+              style={btnPrimary}
+            >
+              {showAddServiceRequest ? '✕ Отмена' : '+ Создать заявку на памятник'}
+            </button>
+          </div>
 
-          {/* Pending */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '40px' }}>
-            {serviceRequests.filter((r) => r.status === 'pending').length === 0 ? (
+          {showAddServiceRequest && (
+            <form onSubmit={handleCreateServiceRequest} style={{ backgroundColor: '#f7faf3', padding: '24px', borderRadius: '14px', border: '2px solid #D8E8C8', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h3 style={{ margin: '0 0 10px', color: '#222719', fontSize: '16px' }}>Новая заявка на памятник</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Выберите памятник *</label>
+                  <select
+                    required
+                    value={newServiceRequestForm.serviceId}
+                    onChange={(e) => setNewServiceRequestForm(prev => ({ ...prev, serviceId: e.target.value }))}
+                    style={inputStyle}
+                  >
+                    <option value="">-- Выберите памятник --</option>
+                    {services.map((s) => (
+                      <option key={s.id} value={s.id}>{getServiceTitle(s)} ({s.price})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Имя клиента *</label>
+                  <input type="text" required placeholder="Иван" value={newServiceRequestForm.name} onChange={(e) => setNewServiceRequestForm(prev => ({ ...prev, name: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Телефон клиента *</label>
+                  <input type="text" required placeholder="+7 (707) 123-4567" value={newServiceRequestForm.phone} onChange={(e) => setNewServiceRequestForm(prev => ({ ...prev, phone: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Email клиента</label>
+                  <input type="email" placeholder="client@example.com" value={newServiceRequestForm.email} onChange={(e) => setNewServiceRequestForm(prev => ({ ...prev, email: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '4px' }}>Комментарий / Пожелания</label>
+                <textarea placeholder="Особые требования к оформлению памятника..." value={newServiceRequestForm.comment} onChange={(e) => setNewServiceRequestForm(prev => ({ ...prev, comment: e.target.value }))} style={{ ...inputStyle, minHeight: '80px', fontFamily: 'inherit' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button type="submit" style={btnPrimary}>Создать заявку</button>
+                <button type="button" onClick={() => { setShowAddServiceRequest(false); setNewServiceRequestForm({ serviceId: '', name: '', phone: '', email: '', comment: '' }); }} style={btnSecondary}>Отмена</button>
+              </div>
+            </form>
+          )}
+
+          <h2 style={{ color: '#222719', marginBottom: '20px', fontSize: '20px' }}>Новые заявки на услуги</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+            {serviceRequests.filter((r) => r.status === 'pending').map((request) => (
+              <div
+                key={request.id}
+                style={{
+                  backgroundColor: 'white',
+                  border: '2px solid #E2EBD5',
+                  borderRadius: '14px',
+                  padding: '20px',
+                  display: 'flex',
+                  gap: '20px',
+                  alignItems: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: '0 0 8px', color: '#222719' }}>{request.serviceTitle}</h3>
+                  <p style={{ margin: '0 0 4px', color: '#556042', fontSize: '14px' }}><strong>Имя:</strong> {request.name}</p>
+                  <p style={{ margin: '0 0 4px', color: '#556042', fontSize: '14px' }}><strong>Телефон:</strong> {request.phone}</p>
+                  {request.email && <p style={{ margin: '0 0 4px', color: '#556042', fontSize: '14px' }}><strong>Email:</strong> {request.email}</p>}
+                  {request.comment && <p style={{ margin: '0 0 4px', color: '#556042', fontSize: '14px' }}><strong>Комментарий:</strong> {request.comment}</p>}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button onClick={() => updateServiceRequestStatus(request.id, 'done')} style={btnPrimary}>✓ Выполнено</button>
+                  <button onClick={() => updateServiceRequestStatus(request.id, 'rejected')} style={btnSecondary}>✕ Отклонить</button>
+                </div>
+              </div>
+            ))}
+            {serviceRequests.filter((r) => r.status === 'pending').length === 0 && (
               <div style={{ textAlign: 'center', padding: '60px', color: '#999', backgroundColor: 'white', borderRadius: '14px', border: '2px dashed #E2EBD5' }}>
                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
                 <p style={{ margin: 0, fontSize: '16px' }}>Нет новых заявок на памятники</p>
               </div>
-            ) : (
-              serviceRequests.filter((r) => r.status === 'pending').map((req) => (
-                <div
-                  key={req.id}
-                  style={{
-                    backgroundColor: 'white',
-                    border: '2px solid #E2EBD5',
-                    borderRadius: '14px',
-                    padding: '20px 24px',
-                    display: 'flex',
-                    gap: '20px',
-                    alignItems: 'flex-start',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  {/* Icon */}
-                  <div
-                    style={{
-                      width: '52px',
-                      height: '52px',
-                      borderRadius: '12px',
-                      backgroundColor: '#E2EBD5',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '24px',
-                      flexShrink: 0,
-                    }}
-                  >
-                    📦
-                  </div>
-
-                  {/* Info */}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <h3 style={{ margin: 0, color: '#222719', fontSize: '15px' }}>{req.name}</h3>
-                      <span
-                        style={{
-                          backgroundColor: '#fff9e6',
-                          color: '#b07800',
-                          border: '1px solid #ffe082',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          padding: '2px 10px',
-                          borderRadius: '10px',
-                        }}
-                      >
-                        Новая
-                      </span>
-                    </div>
-                    <p style={{ margin: '0 0 4px', color: '#222719', fontSize: '13px', fontWeight: 600 }}>
-                      Памятник: {req.serviceTitle}
-                    </p>
-                    <p style={{ margin: '0 0 4px', color: '#556042', fontSize: '13px' }}>
-                      📞 {req.phone}
-                      {req.email && <span style={{ marginLeft: '16px' }}>✉️ {req.email}</span>}
-                    </p>
-                    {req.comment && (
-                      <p style={{ margin: '6px 0 0', color: '#666', fontSize: '13px', fontStyle: 'italic', backgroundColor: '#f8f9f5', padding: '8px 12px', borderRadius: '8px' }}>
-                        «{req.comment}»
-                      </p>
-                    )}
-                    {req.createdAt && (
-                      <p style={{ margin: '6px 0 0', color: '#bbb', fontSize: '11px' }}>
-                        {new Date(req.createdAt).toLocaleString('ru-RU')}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-                    <button
-                      onClick={() => updateServiceRequestStatus(req.id, 'done')}
-                      style={btnPrimary}
-                    >
-                      ✓ Выполнено
-                    </button>
-                    <button
-                      onClick={() => updateServiceRequestStatus(req.id, 'rejected')}
-                      style={btnSecondary}
-                    >
-                      ✕ Отклонить
-                    </button>
-                  </div>
-                </div>
-              ))
             )}
           </div>
 
-          {/* History */}
-          {serviceRequests.filter((r) => r.status !== 'pending').length > 0 && (
-            <div>
-              <h3 style={{ color: '#222719', marginBottom: '12px', fontSize: '16px' }}>История</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {serviceRequests.filter((r) => r.status !== 'pending').map((req) => (
-                  <div
-                    key={req.id}
+          <h2 style={{ color: '#222719', marginTop: '40px', marginBottom: '20px', fontSize: '20px' }}>История заявок на памятники</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+            {serviceRequests.filter((r) => r.status !== 'pending').map((request) => (
+              <div
+                key={request.id}
+                style={{
+                  backgroundColor: '#fafafa',
+                  border: '1px solid #E2EBD5',
+                  borderRadius: '14px',
+                  padding: '20px',
+                  display: 'flex',
+                  gap: '20px',
+                  alignItems: 'center',
+                  opacity: 0.8,
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: '0 0 4px', color: '#222719', fontSize: '16px' }}>{request.serviceTitle}</h3>
+                  <p style={{ margin: '0', color: '#556042', fontSize: '13px' }}><strong>Клиент:</strong> {request.name} ({request.phone})</p>
+                </div>
+                <div>
+                  <span
                     style={{
-                      backgroundColor: req.status === 'done' ? '#f0f8e8' : '#fff0f0',
-                      border: `1.5px solid ${req.status === 'done' ? '#C8DFA0' : '#ffcccc'}`,
-                      borderRadius: '10px',
-                      padding: '12px 16px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '12px',
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      backgroundColor: request.status === 'done' ? '#E2F0D9' : '#FCE4D6',
+                      color: request.status === 'done' ? '#385723' : '#C65911',
                     }}
                   >
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 600, color: '#222719', fontSize: '14px' }}>
-                        {req.name} — {req.serviceTitle}
-                      </p>
-                      <p style={{ margin: '3px 0 0', color: '#556042', fontSize: '12px' }}>
-                        {req.phone}{req.email && ` · ${req.email}`}
-                      </p>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: req.status === 'done' ? '#222719' : '#cc2222',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {req.status === 'done' ? '✓ Выполнено' : '✕ Отклонено'}
-                    </span>
-                  </div>
-                ))}
+                    {request.status === 'done' ? 'Выполнена' : 'Отклонена'}
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
+            ))}
+            {serviceRequests.filter((r) => r.status !== 'pending').length === 0 && (
+              <p style={{ textAlign: 'center', color: '#999', margin: '20px 0' }}>История пуста</p>
+            )}
+          </div>
         </div>
       )}
 
       {/* ===== SERVICES TAB ===== */}
       {tab === 'services' && (
-
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <h2 style={{ color: '#222719', margin: 0, fontSize: '20px' }}>Управление памятниками</h2>
