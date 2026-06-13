@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { neon } from '@neondatabase/serverless';
-import { executeQuery, ensureTablesExist } from './db/init';
+import { executeQuery, ensureTablesExist } from './db/init.js';
 
 const DEFAULT_SERVICES = [
   { tag: 'Гранит', title: 'Гранитный стандарт', description: 'Классический гранитный памятник с гравировкой имени, дат и фотографии питомца.', price: 'от 45 000 ₸', category: 'Гранитные', order: 1 },

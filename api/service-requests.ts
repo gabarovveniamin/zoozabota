@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { neon } from '@neondatabase/serverless';
-import { executeQuery } from './db/init';
+import { executeQuery } from './db/init.js';
 
 function mapRow(r: any) {
   return {
