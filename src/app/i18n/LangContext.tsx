@@ -66,6 +66,8 @@ export const translations = {
       logout: 'Выйти',
       errorFields: 'Пожалуйста, заполните все обязательные поля',
       errorIncorrect: 'Неверный номер телефона или пароль',
+      hasAccount: 'Есть аккаунт?',
+      noAccount: 'Нет аккаунта?',
     },
     // Services
     services: {
@@ -235,6 +237,8 @@ export const translations = {
       logout: 'Шығу',
       errorFields: 'Барлық міндетті өрістерді толтырыңыз',
       errorIncorrect: 'Телефон нөмірі немесе құпия сөз қате',
+      hasAccount: 'Аккаунт бар ма?',
+      noAccount: 'Аккаунт жоқ па?',
     },
     services: {
       pageTitle: 'Ескерткіштер каталогы',
@@ -397,6 +401,8 @@ export const translations = {
       logout: 'Log Out',
       errorFields: 'Please fill in all required fields',
       errorIncorrect: 'Incorrect phone number or password',
+      hasAccount: 'Already have an account?',
+      noAccount: 'No account?',
     },
     services: {
       pageTitle: 'Monument Catalogue',

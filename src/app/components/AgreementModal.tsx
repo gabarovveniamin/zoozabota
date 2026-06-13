@@ -5,7 +5,7 @@ export function AgreementModal() {
   const { t } = useLang();
   const { agreement, auth } = t;
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<'agreement' | 'registration'>('agreement');
+  const [step, setStep] = useState<'agreement' | 'registration' | 'login'>('agreement');
 
   // Form states
   const [firstName, setFirstName] = useState('');
@@ -111,6 +111,36 @@ export function AgreementModal() {
     dispatchAuthChange();
     setIsOpen(false);
     document.body.style.overflow = '';
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      const profileStr = localStorage.getItem('user_profile');
+      if (!profileStr) {
+        setError(auth.errorIncorrect);
+        return;
+      }
+
+      const profile = JSON.parse(profileStr);
+      const cleanInputPhone = phone.replace(/\D/g, '');
+      const cleanStoredPhone = profile.phone.replace(/\D/g, '');
+
+      if (cleanInputPhone === cleanStoredPhone && password === profile.password) {
+        localStorage.setItem('user_logged_in', 'true');
+        localStorage.setItem('agreement_accepted', 'true');
+        dispatchAuthChange();
+        setIsOpen(false);
+        document.body.style.overflow = '';
+      } else {
+        setError(auth.errorIncorrect);
+      }
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError(auth.errorIncorrect);
+    }
   };
 
   if (!isOpen) return null;
@@ -397,8 +427,27 @@ export function AgreementModal() {
                 borderTop: '1px solid #E2EBD5',
                 display: 'flex',
                 justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: '16px',
               }}
             >
+              <button
+                type="button"
+                onClick={() => { setStep('login'); setError(''); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#556042',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0,
+                  outline: 'none',
+                }}
+              >
+                {auth.hasAccount}
+              </button>
               <button
                 type="submit"
                 style={{
@@ -416,6 +465,161 @@ export function AgreementModal() {
                 onMouseLeave={(e) => { (e.currentTarget).style.backgroundColor = '#d0e0bd'; }}
               >
                 {auth.btnRegister}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Login Step */}
+        {step === 'login' && (
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div
+              style={{
+                padding: '20px 28px',
+                backgroundColor: 'white',
+                borderBottom: '1px solid #E2EBD5',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: '#d0e0bd',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  color: '#222719',
+                }}
+              >
+                🔐
+              </div>
+              <h2
+                style={{
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  color: '#222719',
+                  margin: 0,
+                }}
+              >
+                {auth.loginTitle}
+              </h2>
+            </div>
+
+            {/* Content Body */}
+            <div
+              style={{
+                padding: '28px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                maxHeight: '50vh',
+              }}
+            >
+              {error && (
+                <div style={{ color: '#e53e3e', fontSize: '13px', fontWeight: 500, backgroundColor: '#fde8e8', padding: '10px 14px', borderRadius: '10px', border: '1px solid #fecaca' }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.phoneLabel}</label>
+                <input
+                  type="tel"
+                  placeholder="+7 (747) 545 08 07"
+                  required
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #E2EBD5',
+                    fontSize: '14.5px',
+                    outline: 'none',
+                    color: '#222719',
+                    backgroundColor: 'white',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.passwordLabel}</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #E2EBD5',
+                    fontSize: '14.5px',
+                    outline: 'none',
+                    color: '#222719',
+                    backgroundColor: 'white',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
+                />
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div
+              style={{
+                padding: '16px 28px',
+                backgroundColor: 'white',
+                borderTop: '1px solid #E2EBD5',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: '16px',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => { setStep('registration'); setError(''); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#556042',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0,
+                  outline: 'none',
+                }}
+              >
+                {auth.noAccount}
+              </button>
+              <button
+                type="submit"
+                style={{
+                  backgroundColor: '#d0e0bd',
+                  color: '#222719',
+                  border: 'none',
+                  padding: '12px 32px',
+                  borderRadius: '20px',
+                  fontSize: '14.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget).style.backgroundColor = '#b8cba3'; }}
+                onMouseLeave={(e) => { (e.currentTarget).style.backgroundColor = '#d0e0bd'; }}
+              >
+                {auth.btnLogin}
               </button>
             </div>
           </form>
