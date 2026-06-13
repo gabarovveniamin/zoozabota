@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem } from '../db/api';
-
-const ADMIN_PASSWORD = 'admin123'; // Простой пароль для демо
+import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, adminApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem } from '../db/api';
 
 const CATEGORIES = ['Гранитные', 'Мраморные', 'Деревянные', 'Индивидуальные', 'Другое'];
 
@@ -439,8 +437,11 @@ const DocumentFormFields = ({
 };
 
 export function Admin() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('admin_authenticated') === 'true';
+  });
   const [password, setPassword] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
   const [tab, setTab] = useState<'requests' | 'service-requests' | 'services' | 'documents'>('requests');
 
   // Pet Requests
@@ -616,13 +617,24 @@ export function Admin() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      setPassword('');
-    } else {
-      alert('Неверный пароль');
+    if (loggingIn) return;
+    setLoggingIn(true);
+    try {
+      const res = await adminApi.login(password);
+      if (res.success) {
+        setIsAuthenticated(true);
+        sessionStorage.setItem('admin_authenticated', 'true');
+        setPassword('');
+      } else {
+        alert(res.error || 'Неверный пароль');
+      }
+    } catch (err: any) {
+      console.error('Login failed:', err);
+      alert('Неверный пароль или ошибка сервера');
+    } finally {
+      setLoggingIn(false);
     }
   };
 
@@ -981,8 +993,19 @@ export function Admin() {
               onChange={(e) => setPassword(e.target.value)}
               style={inputStyle}
             />
-            <button type="submit" style={{ ...btnPrimary, padding: '14px', fontSize: '16px', borderRadius: '10px' }}>
-              Войти
+            <button
+              type="submit"
+              disabled={loggingIn}
+              style={{
+                ...btnPrimary,
+                padding: '14px',
+                fontSize: '16px',
+                borderRadius: '10px',
+                opacity: loggingIn ? 0.7 : 1,
+                cursor: loggingIn ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {loggingIn ? 'Проверка...' : 'Войти'}
             </button>
           </form>
         </div>
@@ -996,7 +1019,10 @@ export function Admin() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <h1 style={{ color: '#222719', margin: 0, fontSize: '26px' }}>🐾 Админка ZooZabota</h1>
         <button
-          onClick={() => setIsAuthenticated(false)}
+          onClick={() => {
+            setIsAuthenticated(false);
+            sessionStorage.removeItem('admin_authenticated');
+          }}
           style={btnSecondary}
         >
           Выйти

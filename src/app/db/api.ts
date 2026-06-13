@@ -124,3 +124,12 @@ export const searchApi = {
   searchServices: (query: string): Promise<Service[]> =>
     request<Service[]>(`/search-services?q=${encodeURIComponent(query)}`),
 };
+
+// ===== ADMIN AUTH =====
+export const adminApi = {
+  login: (password: string): Promise<{ success: boolean; error?: string }> =>
+    request<{ success: boolean; error?: string }>('/admin-auth', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    }),
+};
