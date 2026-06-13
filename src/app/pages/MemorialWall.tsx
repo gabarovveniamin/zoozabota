@@ -3,11 +3,40 @@ import { PageHero } from '../components/PageHero';
 import { db, type Pet } from '../db/memorialDB';
 import { useLang } from '../i18n/LangContext';
 
+function getTrigrams(str: string): string[] {
+  if (!str) return [];
+  const cleanStr = '  ' + str.toLowerCase().replace(/[^a-z0-9а-яёәғқңөұүһі\s]/g, ' ') + '  ';
+  const trigrams: string[] = [];
+  for (let i = 0; i < cleanStr.length - 2; i++) {
+    trigrams.push(cleanStr.substring(i, i + 3));
+  }
+  return trigrams;
+}
+
+function calculateTrigramSimilarity(query: string, target: string): number {
+  const queryTrigrams = getTrigrams(query);
+  const targetTrigrams = getTrigrams(target);
+  if (queryTrigrams.length === 0 || targetTrigrams.length === 0) return 0;
+
+  const querySet = new Set(queryTrigrams);
+  const targetSet = new Set(targetTrigrams);
+
+  let intersection = 0;
+  querySet.forEach((tg) => {
+    if (targetSet.has(tg)) {
+      intersection++;
+    }
+  });
+
+  return intersection / (querySet.size + targetSet.size - intersection);
+}
+
 export function MemorialWall() {
   const { t } = useLang();
   const mem = t.memorial;
 
   const [pets, setPets] = useState<Pet[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
@@ -20,6 +49,19 @@ export function MemorialWall() {
     email: '',
     photo: '',
   });
+
+  const filteredPets = (() => {
+    if (!searchQuery.trim()) return pets;
+    return pets
+      .map((pet) => {
+        const searchableText = `${pet.name} ${pet.breed} ${pet.description || ''}`;
+        const similarity = calculateTrigramSimilarity(searchQuery, searchableText);
+        return { pet, similarity };
+      })
+      .filter((item) => item.similarity > 0.05)
+      .sort((a, b) => b.similarity - a.similarity)
+      .map((item) => item.pet);
+  })();
 
   useEffect(() => {
     loadPets();
@@ -96,8 +138,62 @@ export function MemorialWall() {
           </div>
         )}
 
-        {/* CTA */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '40px' }}>
+        {/* Search Bar & CTA */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '40px',
+            flexWrap: 'wrap',
+            gap: '16px' 
+          }}
+        >
+          {/* Search bar */}
+          <div style={{ position: 'relative', flex: '1 1 300px', maxWidth: '450px' }}>
+            <input
+              type="text"
+              placeholder={mem.searchPlaceholder}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px 12px 42px',
+                borderRadius: '26px',
+                border: '2px solid #E2EBD5',
+                fontSize: '14px',
+                outline: 'none',
+                color: '#222719',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
+            />
+            <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', color: '#888', userSelect: 'none' }}>
+              🔍
+            </span>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: '14px',
+                  color: '#888',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Add Button */}
           <button
             onClick={() => setShowForm(!showForm)}
             style={{
@@ -225,7 +321,7 @@ export function MemorialWall() {
 
         {/* Pet grid */}
         <div className="memorial-grid-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 300px)', gap: '28px', justifyContent: 'center' }}>
-          {pets.map((pet) => (
+          {filteredPets.map((pet) => (
             <div
               key={pet.id}
               style={{
@@ -292,10 +388,12 @@ export function MemorialWall() {
           ))}
         </div>
 
-        {pets.length === 0 && !showForm && (
+        {filteredPets.length === 0 && !showForm && (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: '#556042' }}>
-            <p style={{ fontSize: '18px' }}>{mem.emptyTitle}</p>
-            <p style={{ fontSize: '14px' }}>{mem.emptyHint}</p>
+            <p style={{ fontSize: '18px' }}>
+              {searchQuery ? mem.noResults : mem.emptyTitle}
+            </p>
+            {!searchQuery && <p style={{ fontSize: '14px' }}>{mem.emptyHint}</p>}
           </div>
         )}
       </div>

@@ -102,6 +102,8 @@ export const translations = {
       emptyHint: 'Нажмите "Добавить питомца", чтобы отправить заявку.',
       btnDelete: 'Удалить',
       alertFields: 'Заполните все обязательные поля',
+      searchPlaceholder: 'Поиск по имени, породе или описанию...',
+      noResults: 'Ничего не найдено. Попробуйте изменить запрос.',
     },
     // Extra
     extra: {
@@ -248,8 +250,10 @@ export const translations = {
       successMsg: '✓ Рақмет! Өтініміңіз модерацияға жіберілді. Тексерілгеннен кейін жарияланады.',
       emptyTitle: 'Ес тақтасында үй жануарлары әлі жоқ.',
       emptyHint: 'Өтінім жіберу үшін "Үй жануарын қосу" батырмасын басыңыз.',
-      btnDelete: 'Жою',
+      btnDelete: 'Өшіру',
       alertFields: 'Барлық міндетті өрістерді толтырыңыз',
+      searchPlaceholder: 'Аты, тұқымы немесе сипаттамасы бойынша іздеу...',
+      noResults: 'Ештеңе табылмады. Сұранысты өзгертіп көріңіз.',
     },
     extra: {
       pageTitle: 'Қызметтер',
@@ -394,6 +398,8 @@ export const translations = {
       emptyHint: 'Click "Add a Pet" to submit a request.',
       btnDelete: 'Delete',
       alertFields: 'Please fill in all required fields',
+      searchPlaceholder: 'Search by name, breed or description...',
+      noResults: 'No results found. Try changing your query.',
     },
     extra: {
       pageTitle: 'Services',
