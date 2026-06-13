@@ -1765,7 +1765,7 @@ export function Admin() {
                         )}
                         <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#888', marginTop: '4px' }}>
                           <span>Имя файла: {doc.fileName}</span>
-                          <span>Загружен: {doc.uploadedAt?.toLocaleDateString()}</span>
+                          <span>Загружен: {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : ''}</span>
                         </div>
                       </div>
 
