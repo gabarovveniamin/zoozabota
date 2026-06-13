@@ -51,18 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const sql = neon(databaseUrl);
     if (req.method === 'GET') {
-      let rows = await executeQuery(sql, () => sql`SELECT * FROM services ORDER BY sort_order ASC`);
-
-      if (rows.length === 0) {
-        for (const s of DEFAULT_SERVICES) {
-          await executeQuery(sql, () => sql`
-            INSERT INTO services (tag, title, description, image, price, category, sort_order)
-            VALUES (${s.tag}, ${JSON.stringify(s.title)}, ${JSON.stringify(s.description)}, ${null}, ${s.price}, ${s.category}, ${s.order})
-          `);
-        }
-        rows = await executeQuery(sql, () => sql`SELECT * FROM services ORDER BY sort_order ASC`);
-      }
-
+      const rows = await executeQuery(sql, () => sql`SELECT * FROM services ORDER BY sort_order ASC`);
       return res.status(200).json(rows.map(mapRow));
     }
 

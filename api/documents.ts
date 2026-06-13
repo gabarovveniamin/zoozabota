@@ -36,18 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const sql = neon(databaseUrl);
     if (req.method === 'GET') {
-      let rows = await executeQuery(sql, () => sql`SELECT * FROM documents ORDER BY uploaded_at DESC`);
-
-      if (rows.length === 0) {
-        for (const d of DEFAULT_DOCUMENTS) {
-          await executeQuery(sql, () => sql`
-            INSERT INTO documents (title, description, file_name, file_data, file_type, uploaded_at)
-            VALUES (${d.title}, ${d.description}, ${d.fileName}, ${d.fileData}, ${d.fileType}, NOW())
-          `);
-        }
-        rows = await executeQuery(sql, () => sql`SELECT * FROM documents ORDER BY uploaded_at DESC`);
-      }
-
+      const rows = await executeQuery(sql, () => sql`SELECT * FROM documents ORDER BY uploaded_at DESC`);
       return res.status(200).json(rows.map(mapRow));
     }
 
