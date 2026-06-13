@@ -3,23 +3,67 @@ import { useLang } from '../i18n/LangContext';
 
 export function AgreementModal() {
   const { t } = useLang();
-  const { agreement } = t;
+  const { agreement, auth } = t;
   const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<'agreement' | 'registration'>('agreement');
+
+  // Form states
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check if the user has already accepted the terms
+    // Check if the user has already accepted the terms and registered
     const accepted = localStorage.getItem('agreement_accepted');
-    if (!accepted) {
+    const registered = localStorage.getItem('user_registered') === 'true';
+
+    // Show modal if either agreement is not accepted or user is not registered
+    if (!accepted || !registered) {
       setIsOpen(true);
       document.body.style.overflow = 'hidden';
+      // If agreement is accepted but not registered, skip to registration step
+      if (accepted && !registered) {
+        setStep('registration');
+      }
     }
     return () => {
       document.body.style.overflow = '';
     };
   }, []);
 
+  const dispatchAuthChange = () => {
+    window.dispatchEvent(new Event('user_auth_change'));
+  };
+
   const handleAccept = () => {
+    const registered = localStorage.getItem('user_registered') === 'true';
+    if (registered) {
+      localStorage.setItem('agreement_accepted', 'true');
+      localStorage.setItem('user_logged_in', 'true');
+      dispatchAuthChange();
+      setIsOpen(false);
+      document.body.style.overflow = '';
+    } else {
+      setStep('registration');
+    }
+  };
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firstName.trim() || !lastName.trim() || !phone.trim() || !password.trim()) {
+      setError(auth.errorFields);
+      return;
+    }
+
+    const profile = { firstName, lastName, phone, password };
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    localStorage.setItem('user_registered', 'true');
+    localStorage.setItem('user_logged_in', 'true');
     localStorage.setItem('agreement_accepted', 'true');
+
+    dispatchAuthChange();
     setIsOpen(false);
     document.body.style.overflow = '';
   };
@@ -48,7 +92,7 @@ export function AgreementModal() {
           backgroundColor: '#F8F9F5',
           borderRadius: '24px',
           width: '100%',
-          maxWidth: '640px',
+          maxWidth: '600px',
           maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
@@ -57,93 +101,280 @@ export function AgreementModal() {
           animation: 'agreementSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Header */}
-        <div
-          style={{
-            padding: '20px 28px',
-            backgroundColor: 'white',
-            borderBottom: '1px solid #E2EBD5',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: '#d0e0bd',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              color: '#222719',
-            }}
-          >
-            📄
+        {/* Agreement Step */}
+        {step === 'agreement' && (
+          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div
+              style={{
+                padding: '20px 28px',
+                backgroundColor: 'white',
+                borderBottom: '1px solid #E2EBD5',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: '#d0e0bd',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  color: '#222719',
+                }}
+              >
+                📄
+              </div>
+              <h2
+                style={{
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  color: '#222719',
+                  margin: 0,
+                }}
+              >
+                {agreement.title}
+              </h2>
+            </div>
+
+            {/* Content Body */}
+            <div
+              style={{
+                padding: '28px 28px 20px',
+                overflowY: 'auto',
+                fontSize: '14.5px',
+                color: '#556042',
+                lineHeight: 1.65,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+                maxHeight: '50vh',
+              }}
+            >
+              <p style={{ margin: 0, fontWeight: 500, color: '#222719' }}>{agreement.p1}</p>
+              <p style={{ margin: 0 }}>{agreement.p2}</p>
+              <p style={{ margin: 0 }}>{agreement.p3}</p>
+              <p style={{ margin: 0 }}>{agreement.p4}</p>
+              <p style={{ margin: 0 }}>{agreement.p5}</p>
+            </div>
+
+            {/* Footer Actions */}
+            <div
+              style={{
+                padding: '16px 28px',
+                backgroundColor: 'white',
+                borderTop: '1px solid #E2EBD5',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={handleAccept}
+                style={{
+                  backgroundColor: '#d0e0bd',
+                  color: '#222719',
+                  border: 'none',
+                  padding: '12px 32px',
+                  borderRadius: '20px',
+                  fontSize: '14.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget).style.backgroundColor = '#b8cba3'; }}
+                onMouseLeave={(e) => { (e.currentTarget).style.backgroundColor = '#d0e0bd'; }}
+              >
+                {agreement.btnAccept}
+              </button>
+            </div>
           </div>
-          <h2
-            style={{
-              fontSize: '20px',
-              fontWeight: 700,
-              color: '#222719',
-              margin: 0,
-            }}
-          >
-            {agreement.title}
-          </h2>
-        </div>
+        )}
 
-        {/* Content Body */}
-        <div
-          style={{
-            padding: '28px 28px 20px',
-            overflowY: 'auto',
-            fontSize: '14.5px',
-            color: '#556042',
-            lineHeight: 1.65,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-          }}
-        >
-          <p style={{ margin: 0, fontWeight: 500, color: '#222719' }}>{agreement.p1}</p>
-          <p style={{ margin: 0 }}>{agreement.p2}</p>
-          <p style={{ margin: 0 }}>{agreement.p3}</p>
-          <p style={{ margin: 0 }}>{agreement.p4}</p>
-          <p style={{ margin: 0 }}>{agreement.p5}</p>
-        </div>
+        {/* Registration Step */}
+        {step === 'registration' && (
+          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div
+              style={{
+                padding: '20px 28px',
+                backgroundColor: 'white',
+                borderBottom: '1px solid #E2EBD5',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: '#d0e0bd',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  color: '#222719',
+                }}
+              >
+                👤
+              </div>
+              <h2
+                style={{
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  color: '#222719',
+                  margin: 0,
+                }}
+              >
+                {auth.regTitle}
+              </h2>
+            </div>
 
-        {/* Footer Actions */}
-        <div
-          style={{
-            padding: '16px 28px',
-            backgroundColor: 'white',
-            borderTop: '1px solid #E2EBD5',
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <button
-            onClick={handleAccept}
-            style={{
-              backgroundColor: '#d0e0bd',
-              color: '#222719',
-              border: 'none',
-              padding: '12px 32px',
-              borderRadius: '20px',
-              fontSize: '14.5px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'background-color 0.2s',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget).style.backgroundColor = '#b8cba3'; }}
-            onMouseLeave={(e) => { (e.currentTarget).style.backgroundColor = '#d0e0bd'; }}
-          >
-            {agreement.btnAccept}
-          </button>
-        </div>
+            {/* Content Body */}
+            <div
+              style={{
+                padding: '28px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                maxHeight: '50vh',
+              }}
+            >
+              {error && (
+                <div style={{ color: '#e53e3e', fontSize: '13px', fontWeight: 500, backgroundColor: '#fde8e8', padding: '10px 14px', borderRadius: '10px', border: '1px solid #fecaca' }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.firstNameLabel}</label>
+                  <input
+                    type="text"
+                    required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1.5px solid #E2EBD5',
+                      fontSize: '14.5px',
+                      outline: 'none',
+                      color: '#222719',
+                      backgroundColor: 'white',
+                      transition: 'border-color 0.2s',
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
+                  />
+                </div>
+                <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.lastNameLabel}</label>
+                  <input
+                    type="text"
+                    required
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1.5px solid #E2EBD5',
+                      fontSize: '14.5px',
+                      outline: 'none',
+                      color: '#222719',
+                      backgroundColor: 'white',
+                      transition: 'border-color 0.2s',
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.phoneLabel}</label>
+                <input
+                  type="tel"
+                  placeholder="+7 (777) 123-45-67"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #E2EBD5',
+                    fontSize: '14.5px',
+                    outline: 'none',
+                    color: '#222719',
+                    backgroundColor: 'white',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.passwordLabel}</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #E2EBD5',
+                    fontSize: '14.5px',
+                    outline: 'none',
+                    color: '#222719',
+                    backgroundColor: 'white',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
+                />
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div
+              style={{
+                padding: '16px 28px',
+                backgroundColor: 'white',
+                borderTop: '1px solid #E2EBD5',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                type="submit"
+                style={{
+                  backgroundColor: '#d0e0bd',
+                  color: '#222719',
+                  border: 'none',
+                  padding: '12px 32px',
+                  borderRadius: '20px',
+                  fontSize: '14.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget).style.backgroundColor = '#b8cba3'; }}
+                onMouseLeave={(e) => { (e.currentTarget).style.backgroundColor = '#d0e0bd'; }}
+              >
+                {auth.btnRegister}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       <style>{`
