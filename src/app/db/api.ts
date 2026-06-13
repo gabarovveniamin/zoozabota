@@ -121,4 +121,6 @@ export const documentsApi = {
 export const searchApi = {
   searchPets: (query: string): Promise<Pet[]> =>
     request<Pet[]>(`/search-pets?q=${encodeURIComponent(query)}`),
+  searchServices: (query: string): Promise<Service[]> =>
+    request<Service[]>(`/search-services?q=${encodeURIComponent(query)}`),
 };

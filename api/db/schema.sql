@@ -71,6 +71,9 @@ CREATE INDEX IF NOT EXISTS idx_pets_name_trgm ON pets USING gin (name gin_trgm_o
 CREATE INDEX IF NOT EXISTS idx_pets_breed_trgm ON pets USING gin (breed gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_pets_description_trgm ON pets USING gin (COALESCE(description, '') gin_trgm_ops);
 
+-- Create trigram indexes for fuzzy search on services
+CREATE INDEX IF NOT EXISTS idx_services_tag_trgm ON services USING gin (tag gin_trgm_ops);
+
 -- Other useful indexes
 CREATE INDEX IF NOT EXISTS idx_pet_requests_status ON pet_requests(status);
 CREATE INDEX IF NOT EXISTS idx_services_sort_order ON services(sort_order);

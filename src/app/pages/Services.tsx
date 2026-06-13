@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PageHero } from '../components/PageHero';
 import { ServiceModal } from '../components/ServiceModal';
-import { servicesApi, type Service } from '../db/api';
+import { servicesApi, searchApi, type Service } from '../db/api';
 import { useLang } from '../i18n/LangContext';
 
 export function Services() {
@@ -12,6 +12,8 @@ export function Services() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Service[] | null>(null);
 
   const getServiceTitle = (s: Service) => {
     if (typeof s.title === 'string') return s.title;
@@ -23,10 +25,30 @@ export function Services() {
     return s.description[lang] || s.description['ru'] || '';
   };
 
-  // Reset filter to 'All' when language changes
+  // Reset filter and search query when language changes
   useEffect(() => {
     setActiveFilter(null);
+    setSearchQuery('');
+    setSearchResults(null);
   }, [lang]);
+
+  // Debounced server-side trigram search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        const results = await searchApi.searchServices(searchQuery);
+        setSearchResults(results);
+      } catch (err) {
+        console.error('Search failed:', err);
+        setSearchResults(null);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   useEffect(() => {
     const loadServices = async () => {
@@ -75,15 +97,72 @@ export function Services() {
     return category;
   };
 
+  const searchActive = searchQuery.trim() !== '';
+  const sourceList = searchActive ? (searchResults ?? []) : services;
   const filtered = activeFilter === null
-    ? services
-    : services.filter((s) => s.category === activeFilter);
+    ? sourceList
+    : sourceList.filter((s) => s.category === activeFilter);
 
   return (
     <div>
       <PageHero title={srv.pageTitle} />
 
       <div className="container-responsive" style={{ maxWidth: '1440px', margin: '0 auto', padding: '60px 100px' }}>
+        {/* Search Bar */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '32px',
+            flexWrap: 'wrap',
+            gap: '16px' 
+          }}
+        >
+          <div style={{ position: 'relative', flex: '1 1 300px', maxWidth: '450px' }}>
+            <input
+              type="text"
+              placeholder={srv.searchPlaceholder}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px 12px 42px',
+                borderRadius: '26px',
+                border: '2px solid #E2EBD5',
+                fontSize: '14px',
+                outline: 'none',
+                color: '#222719',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
+            />
+            <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', color: '#888', userSelect: 'none' }}>
+              🔍
+            </span>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: '14px',
+                  color: '#888',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Filter bar */}
         <div
           style={{
@@ -129,7 +208,7 @@ export function Services() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px', color: '#999', fontSize: '18px' }}>
-            {srv.empty}
+            {searchActive ? srv.noResults : srv.empty}
           </div>
         ) : (
           <div

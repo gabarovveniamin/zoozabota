@@ -60,6 +60,8 @@ export const translations = {
       loading: 'Загрузка...',
       empty: 'Нет памятников в этой категории',
       btnDetails: 'Подробнее →',
+      searchPlaceholder: 'Поиск памятников по названию, описанию или тегу...',
+      noResults: 'Памятники по вашему запросу не найдены.',
     },
     // Service Modal
     modal: {
@@ -212,6 +214,8 @@ export const translations = {
       loading: 'Жүктелуде...',
       empty: 'Бұл санатта ескерткіштер жоқ',
       btnDetails: 'Толығырақ →',
+      searchPlaceholder: 'Ескерткіштерді атауы, сипаттамасы немесе тегі бойынша іздеу...',
+      noResults: 'Сіздің сұранысыңыз бойынша ескерткіштер табылмады.',
     },
     modal: {
       features: ['✓ Жеке тәсіл', '✓ Сапа кепілдігі', '✓ Жеткізу және орнату'],
@@ -358,6 +362,8 @@ export const translations = {
       loading: 'Loading...',
       empty: 'No monuments in this category',
       btnDetails: 'Learn more →',
+      searchPlaceholder: 'Search monuments by title, description or tag...',
+      noResults: 'No monuments found matching your query.',
     },
     modal: {
       features: ['✓ Individual approach', '✓ Quality guarantee', '✓ Delivery & installation'],

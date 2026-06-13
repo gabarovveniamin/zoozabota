@@ -99,6 +99,7 @@ export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_name_trgm ON pets USING gin (name gin_trgm_ops)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_breed_trgm ON pets USING gin (breed gin_trgm_ops)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_description_trgm ON pets USING gin (description gin_trgm_ops)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_services_tag_trgm ON services USING gin (tag gin_trgm_ops)`;
 
       // 4. Seed services
       const svcCount = await sql`SELECT COUNT(*)::int as count FROM services`;
