@@ -47,7 +47,7 @@ Section 1 — Hero (600px tall):
 
 Section 2 — Stats strip (96px, #E2EBD5 background):
 Four stats evenly spaced:
-- "1" / "Единственный в Казахстане"
+- "Единственный в Казахстане"
 - "2024" / "Год основания"  
 - "∞" / "Памятей навсегда"
 - "❤️" / "С любовью к животным"

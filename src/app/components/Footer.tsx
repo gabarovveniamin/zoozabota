@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useLang } from '../i18n/LangContext';
 
 export function Footer() {
@@ -32,6 +33,22 @@ export function Footer() {
           <p style={{ color: '#556042', fontSize: '13px', margin: 0 }}>
             {t.footer.address}
           </p>
+          <div style={{ marginTop: '16px' }}>
+            <Link
+              to="/documents"
+              style={{
+                color: '#556042',
+                fontSize: '14px',
+                fontWeight: 600,
+                textDecoration: 'underline',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#222719'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#556042'; }}
+            >
+              {t.footer.documents}
+            </Link>
+          </div>
         </div>
 
         {/* Middle section: Director */}

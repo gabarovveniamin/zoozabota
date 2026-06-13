@@ -20,7 +20,7 @@ export const translations = {
       btnServices: 'Наши памятники',
       btnDonate: 'Поддержать проект',
       stats: [
-        { number: '1', label: 'Единственный в Казахстане' },
+        { number: '', label: 'Единственный в Казахстане' },
         { number: '2026', label: 'Год основания' },
         { number: '❤️', label: 'С любовью к каждому' },
       ],
@@ -142,6 +142,7 @@ export const translations = {
       directorTitle: 'Директор проекта',
       contactsTitle: 'Контакты',
       socialsTitle: 'Мы в соцсетях',
+      documents: 'Документы',
     },
     // 404
     notFound: {
@@ -286,6 +287,7 @@ export const translations = {
       directorTitle: 'Жоба директоры',
       contactsTitle: 'Байланыс',
       socialsTitle: 'Әлеуметтік желілер',
+      documents: 'Құжаттар',
     },
     notFound: {
       title404: '404',
@@ -429,6 +431,7 @@ export const translations = {
       directorTitle: 'Project Director',
       contactsTitle: 'Contacts',
       socialsTitle: 'Social Media',
+      documents: 'Documents',
     },
     notFound: {
       title404: '404',
