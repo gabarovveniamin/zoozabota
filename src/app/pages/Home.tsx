@@ -135,7 +135,7 @@ export function Home() {
             width: '100%',
             display: 'flex',
             justifyContent: 'center',
-            gap: '160px',
+            gap: '120px',
             alignItems: 'center',
           }}
         >
