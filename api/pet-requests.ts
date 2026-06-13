@@ -27,9 +27,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!databaseUrl) {
     return res.status(500).json({ error: 'Neither DATABASE_URL nor POSTGRES_URL environment variables are defined. Please link your Neon database in Vercel settings.' });
   }
-  const sql = neon(databaseUrl);
-
   try {
+    const sql = neon(databaseUrl);
     if (req.method === 'GET') {
       const id = req.query.id as string | undefined;
       if (id) {
