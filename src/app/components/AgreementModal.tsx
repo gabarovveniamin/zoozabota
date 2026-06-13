@@ -50,6 +50,51 @@ export function AgreementModal() {
     }
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    if (!input) {
+      setPhone('');
+      return;
+    }
+    if (phone.startsWith('+7 (') && input.length < 4) {
+      setPhone('');
+      return;
+    }
+    const digits = input.replace(/\D/g, '');
+    if (digits.length === 0) {
+      setPhone('');
+      return;
+    }
+    let rest = digits;
+    if (digits[0] === '7' || digits[0] === '8') {
+      rest = digits.slice(1);
+    }
+    rest = rest.slice(0, 10);
+    let formatted = '+7 (';
+    if (rest.length > 0) {
+      formatted += rest.slice(0, 3);
+    }
+    if (rest.length >= 3) {
+      formatted += ') ';
+    }
+    if (rest.length > 3) {
+      formatted += rest.slice(3, 6);
+    }
+    if (rest.length >= 6) {
+      formatted += ' ';
+    }
+    if (rest.length > 6) {
+      formatted += rest.slice(6, 8);
+    }
+    if (rest.length >= 8) {
+      formatted += ' ';
+    }
+    if (rest.length > 8) {
+      formatted += rest.slice(8, 10);
+    }
+    setPhone(formatted);
+  };
+
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName.trim() || !lastName.trim() || !phone.trim() || !password.trim()) {
@@ -302,10 +347,10 @@ export function AgreementModal() {
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.phoneLabel}</label>
                 <input
                   type="tel"
-                  placeholder="+7 (777) 123-45-67"
+                  placeholder="+7 (747) 545 08 07"
                   required
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={handlePhoneChange}
                   style={{
                     padding: '12px 16px',
                     borderRadius: '12px',
