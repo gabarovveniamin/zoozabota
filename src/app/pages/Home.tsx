@@ -118,6 +118,36 @@ export function Home() {
           </div>
         </div>
       </section>
+      {/* Stats Strip */}
+      <section
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '40px 0',
+        }}
+      >
+        <div
+          className="stats-container-responsive container-responsive"
+          style={{
+            maxWidth: '1440px',
+            margin: '0 auto',
+            padding: '0 100px',
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '160px',
+            alignItems: 'center',
+          }}
+        >
+          {home.stats.map((stat, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '28px', fontWeight: 700, color: '#222719' }}>{stat.number}</div>
+              <div style={{ fontSize: '13px', color: '#556042' }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Welcome Image Section */}
       <section className="flyer-section-responsive container-responsive" style={{ maxWidth: '1440px', margin: '60px auto 0', padding: '0 100px' }}>
         <div
