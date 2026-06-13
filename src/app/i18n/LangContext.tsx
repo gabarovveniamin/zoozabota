@@ -173,7 +173,7 @@ export const translations = {
       btnServices: 'Біздің ескерткіштер',
       btnDonate: 'Жобаны қолдау',
       stats: [
-        { number: '1', label: 'Қазақстандағы жалғыз' },
+        { number: '☝🏻', label: 'Қазақстандағы жалғыз' },
         { number: '2026', label: 'Құрылған жылы' },
         { number: '❤️', label: 'Әрқайсысына деген сүйіспеншілікпен' },
       ],
@@ -319,7 +319,7 @@ export const translations = {
       btnServices: 'Our Monuments',
       btnDonate: 'Support the Project',
       stats: [
-        { number: '1', label: 'Only one in Kazakhstan' },
+        { number: '☝🏻', label: 'Only one in Kazakhstan' },
         { number: '2026', label: 'Founded' },
         { number: '❤️', label: 'With Love for Everyone' },
       ],
