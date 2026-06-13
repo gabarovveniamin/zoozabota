@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, type Service } from '../db/memorialDB';
+import { serviceRequestsApi, type Service } from '../db/api';
 import { useLang } from '../i18n/LangContext';
 
 interface ServiceModalProps {
@@ -39,16 +39,20 @@ export function ServiceModal({ service, onClose }: ServiceModalProps) {
     e.preventDefault();
     if (!form.name || !form.phone) { alert(m.alertFields); return; }
     setLoading(true);
-    await db.serviceRequests.add({
-      serviceId: service.id!,
-      serviceTitle: getServiceTitle(service),
-      name: form.name,
-      phone: form.phone,
-      email: form.email || undefined,
-      comment: form.comment || undefined,
-      status: 'pending',
-      createdAt: new Date(),
-    });
+    try {
+      await serviceRequestsApi.add({
+        serviceId: service.id!,
+        serviceTitle: getServiceTitle(service),
+        name: form.name,
+        phone: form.phone,
+        email: form.email || undefined,
+        comment: form.comment || undefined,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('Failed to submit service request:', err);
+    }
     setLoading(false);
     setSubmitted(true);
   };

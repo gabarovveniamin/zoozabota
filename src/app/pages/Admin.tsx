@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, DEFAULT_SERVICES, DEFAULT_DOCUMENTS, type PetRequest, type Service, type ServiceRequest, type DocumentItem } from '../db/memorialDB';
+import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem } from '../db/api';
 
 const ADMIN_PASSWORD = 'admin123'; // Простой пароль для демо
 
@@ -478,67 +478,86 @@ export function Admin() {
 
   // ===== PET REQUESTS =====
   const loadRequests = async () => {
-    const allRequests = await db.petRequests.toArray();
-    setRequests(allRequests);
+    try {
+      const allRequests = await petRequestsApi.getAll();
+      setRequests(allRequests);
+    } catch (err) {
+      console.error('Failed to load pet requests:', err);
+    }
   };
 
   // ===== SERVICE REQUESTS =====
   const loadServiceRequests = async () => {
-    const all = await db.serviceRequests.toArray();
-    setServiceRequests(all.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)));
+    try {
+      const all = await serviceRequestsApi.getAll();
+      setServiceRequests(all.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()));
+    } catch (err) {
+      console.error('Failed to load service requests:', err);
+    }
   };
 
   const updateServiceRequestStatus = async (id: number | undefined, status: 'done' | 'rejected') => {
     if (!id) return;
-    await db.serviceRequests.update(id, { status });
-    loadServiceRequests();
+    try {
+      await serviceRequestsApi.update(id, { status });
+      loadServiceRequests();
+    } catch (err) {
+      console.error('Failed to update service request:', err);
+    }
   };
 
 
 
   const approvePetRequest = async (id: number | undefined) => {
     if (!id) return;
-    const request = await db.petRequests.get(id);
-    if (request) {
-      await db.pets.add({
-        name: request.name,
-        breed: request.breed,
-        years: request.years,
-        emoji: request.emoji,
-        description: request.description,
-        photo: request.photo,
-        createdAt: new Date(),
-      });
-      await db.petRequests.update(id, { status: 'approved' });
-      loadRequests();
+    try {
+      const request = await petRequestsApi.get(id);
+      if (request) {
+        await petsApi.add({
+          name: request.name,
+          breed: request.breed,
+          years: request.years,
+          emoji: request.emoji,
+          description: request.description,
+          photo: request.photo,
+          createdAt: new Date().toISOString(),
+        });
+        await petRequestsApi.update(id, { status: 'approved' });
+        loadRequests();
+      }
+    } catch (err) {
+      console.error('Failed to approve pet request:', err);
     }
   };
 
   const rejectPetRequest = async (id: number | undefined) => {
     if (!id) return;
-    await db.petRequests.update(id, { status: 'rejected' });
-    loadRequests();
+    try {
+      await petRequestsApi.update(id, { status: 'rejected' });
+      loadRequests();
+    } catch (err) {
+      console.error('Failed to reject pet request:', err);
+    }
   };
 
   // ===== SERVICES =====
   const loadServices = async () => {
-    let allServices = await db.services.toArray();
-    // Seed defaults if empty
-    if (allServices.length === 0) {
-      await db.services.bulkAdd(DEFAULT_SERVICES);
-      allServices = await db.services.toArray();
+    try {
+      const allServices = await servicesApi.getAll();
+      setServices(allServices.sort((a, b) => a.order - b.order));
+    } catch (err) {
+      console.error('Failed to load services:', err);
     }
-    setServices(allServices.sort((a, b) => a.order - b.order));
   };
 
   // ===== DOCUMENTS =====
   const loadDocuments = async () => {
-    let count = await db.documents.count();
-    if (count === 0) {
-      await db.documents.bulkAdd(DEFAULT_DOCUMENTS);
+    try {
+      const allDocs = await documentsApi.getAll();
+      setDocuments(allDocs.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()));
+    } catch (err) {
+      console.error('Failed to load documents:', err);
     }
-    const allDocs = await db.documents.toArray();
-    setDocuments(allDocs.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime()));
   };
 
   const handleDocFileChange = (
@@ -567,14 +586,18 @@ export function Admin() {
       alert('Пожалуйста, заполните название и выберите PDF-файл');
       return;
     }
-    await db.documents.add({
-      title: addDocForm.title,
-      description: addDocForm.description,
-      fileName: addDocForm.fileName,
-      fileData: addDocForm.fileData,
-      fileType: addDocForm.fileType,
-      uploadedAt: new Date(),
-    });
+    try {
+      await documentsApi.add({
+        title: addDocForm.title,
+        description: addDocForm.description,
+        fileName: addDocForm.fileName,
+        fileData: addDocForm.fileData,
+        fileType: addDocForm.fileType,
+        uploadedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('Failed to add document:', err);
+    }
     setShowAddDocForm(false);
     setAddDocForm(emptyDocForm);
     loadDocuments();
@@ -599,13 +622,17 @@ export function Admin() {
       alert('Пожалуйста, заполните название');
       return;
     }
-    await db.documents.update(editingDocId, {
-      title: editDocForm.title,
-      description: editDocForm.description,
-      fileName: editDocForm.fileName,
-      fileData: editDocForm.fileData,
-      fileType: editDocForm.fileType,
-    });
+    try {
+      await documentsApi.update(editingDocId, {
+        title: editDocForm.title,
+        description: editDocForm.description,
+        fileName: editDocForm.fileName,
+        fileData: editDocForm.fileData,
+        fileType: editDocForm.fileType,
+      });
+    } catch (err) {
+      console.error('Failed to update document:', err);
+    }
     setEditingDocId(null);
     setEditDocForm(emptyDocForm);
     loadDocuments();
@@ -614,7 +641,11 @@ export function Admin() {
   const deleteDoc = async (id: number | undefined) => {
     if (!id) return;
     if (confirm('Вы уверены, что хотите удалить этот документ?')) {
-      await db.documents.delete(id);
+      try {
+        await documentsApi.delete(id);
+      } catch (err) {
+        console.error('Failed to delete document:', err);
+      }
       loadDocuments();
     }
   };
@@ -686,15 +717,19 @@ export function Admin() {
       return;
     }
     const maxOrder = Math.max(...services.map((s) => s.order), 0);
-    await db.services.add({
-      tag: addForm.tag,
-      title: addForm.title,
-      description: addForm.description,
-      image: addForm.image || undefined,
-      price: addForm.price || undefined,
-      category: addForm.category || undefined,
-      order: maxOrder + 1,
-    });
+    try {
+      await servicesApi.add({
+        tag: addForm.tag,
+        title: addForm.title,
+        description: addForm.description,
+        image: addForm.image || undefined,
+        price: addForm.price || undefined,
+        category: addForm.category || undefined,
+        order: maxOrder + 1,
+      });
+    } catch (err) {
+      console.error('Failed to add service:', err);
+    }
     setAddForm(emptyForm);
     setAddPreview('');
     setShowAddForm(false);
@@ -727,14 +762,18 @@ export function Admin() {
       alert('Заполните обязательные поля (Тег, Название и Описание на русском языке обязательно)');
       return;
     }
-    await db.services.update(editingId, {
-      tag: editForm.tag,
-      title: editForm.title,
-      description: editForm.description,
-      image: editForm.image || undefined,
-      price: editForm.price || undefined,
-      category: editForm.category || undefined,
-    });
+    try {
+      await servicesApi.update(editingId, {
+        tag: editForm.tag,
+        title: editForm.title,
+        description: editForm.description,
+        image: editForm.image || undefined,
+        price: editForm.price || undefined,
+        category: editForm.category || undefined,
+      });
+    } catch (err) {
+      console.error('Failed to update service:', err);
+    }
     cancelEdit();
     loadServices();
   };
@@ -742,7 +781,11 @@ export function Admin() {
   const deleteService = async (id: number | undefined) => {
     if (!id) return;
     if (confirm('Удалить услугу?')) {
-      await db.services.delete(id);
+      try {
+        await servicesApi.delete(id);
+      } catch (err) {
+        console.error('Failed to delete service:', err);
+      }
       loadServices();
     }
   };

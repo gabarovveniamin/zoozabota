@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PageHero } from '../components/PageHero';
 import { useLang } from '../i18n/LangContext';
-import { db, DEFAULT_DOCUMENTS, type DocumentItem } from '../db/memorialDB';
+import { documentsApi, type DocumentItem } from '../db/api';
 
 export function Documents() {
   const { t } = useLang();
@@ -35,13 +35,12 @@ export function Documents() {
   }, [selectedDoc]);
 
   const loadDocuments = async () => {
-    let count = await db.documents.count();
-    if (count === 0) {
-      // Seed default documents
-      await db.documents.bulkAdd(DEFAULT_DOCUMENTS);
+    try {
+      const allDocs = await documentsApi.getAll();
+      setDocuments(allDocs);
+    } catch (err) {
+      console.error('Failed to load documents:', err);
     }
-    const allDocs = await db.documents.toArray();
-    setDocuments(allDocs);
   };
 
   const handleDownload = (doc: DocumentItem, e: React.MouseEvent) => {

@@ -1,35 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PageHero } from '../components/PageHero';
-import { db, type Pet } from '../db/memorialDB';
+import { petsApi, petRequestsApi, searchApi, type Pet } from '../db/api';
 import { useLang } from '../i18n/LangContext';
-
-function getTrigrams(str: string): string[] {
-  if (!str) return [];
-  const cleanStr = '  ' + str.toLowerCase().replace(/[^a-z0-9а-яёәғқңөұүһі\s]/g, ' ') + '  ';
-  const trigrams: string[] = [];
-  for (let i = 0; i < cleanStr.length - 2; i++) {
-    trigrams.push(cleanStr.substring(i, i + 3));
-  }
-  return trigrams;
-}
-
-function calculateTrigramSimilarity(query: string, target: string): number {
-  const queryTrigrams = getTrigrams(query);
-  const targetTrigrams = getTrigrams(target);
-  if (queryTrigrams.length === 0 || targetTrigrams.length === 0) return 0;
-
-  const querySet = new Set(queryTrigrams);
-  const targetSet = new Set(targetTrigrams);
-
-  let intersection = 0;
-  querySet.forEach((tg) => {
-    if (targetSet.has(tg)) {
-      intersection++;
-    }
-  });
-
-  return intersection / (querySet.size + targetSet.size - intersection);
-}
 
 export function MemorialWall() {
   const { t } = useLang();
@@ -40,6 +12,7 @@ export function MemorialWall() {
   const [showForm, setShowForm] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
+  const [searchResults, setSearchResults] = useState<Pet[] | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     breed: '',
@@ -50,26 +23,37 @@ export function MemorialWall() {
     photo: '',
   });
 
-  const filteredPets = (() => {
-    if (!searchQuery.trim()) return pets;
-    return pets
-      .map((pet) => {
-        const searchableText = `${pet.name} ${pet.breed} ${pet.description || ''}`;
-        const similarity = calculateTrigramSimilarity(searchQuery, searchableText);
-        return { pet, similarity };
-      })
-      .filter((item) => item.similarity > 0.05)
-      .sort((a, b) => b.similarity - a.similarity)
-      .map((item) => item.pet);
-  })();
+  const filteredPets = searchResults !== null ? searchResults : pets;
 
   useEffect(() => {
     loadPets();
   }, []);
 
+  // Debounced server-side trigram search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        const results = await searchApi.searchPets(searchQuery);
+        setSearchResults(results);
+      } catch (err) {
+        console.error('Search failed:', err);
+        setSearchResults(null);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
   const loadPets = async () => {
-    const allPets = await db.pets.toArray();
-    setPets(allPets);
+    try {
+      const allPets = await petsApi.getAll();
+      setPets(allPets);
+    } catch (err) {
+      console.error('Failed to load pets:', err);
+    }
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,17 +75,21 @@ export function MemorialWall() {
       alert(mem.alertFields);
       return;
     }
-    await db.petRequests.add({
-      name: formData.name,
-      breed: formData.breed,
-      years: formData.years,
-      emoji: formData.emoji,
-      description: formData.description,
-      email: formData.email,
-      photo: formData.photo || undefined,
-      status: 'pending',
-      createdAt: new Date(),
-    });
+    try {
+      await petRequestsApi.add({
+        name: formData.name,
+        breed: formData.breed,
+        years: formData.years,
+        emoji: formData.emoji,
+        description: formData.description,
+        email: formData.email,
+        photo: formData.photo || undefined,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('Failed to submit pet request:', err);
+    }
     setFormData({ name: '', breed: '', years: '', emoji: '🐱', description: '', email: '', photo: '' });
     setPhotoPreview('');
     setShowForm(false);
@@ -111,8 +99,12 @@ export function MemorialWall() {
 
   const handleDeletePet = async (id: number | undefined) => {
     if (id && confirm('Вы уверены, что хотите удалить?')) {
-      await db.pets.delete(id);
-      loadPets();
+      try {
+        await petsApi.delete(id);
+        loadPets();
+      } catch (err) {
+        console.error('Failed to delete pet:', err);
+      }
     }
   };
 

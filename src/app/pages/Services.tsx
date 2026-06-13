@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PageHero } from '../components/PageHero';
 import { ServiceModal } from '../components/ServiceModal';
-import { db, DEFAULT_SERVICES, type Service } from '../db/memorialDB';
+import { servicesApi, type Service } from '../db/api';
 import { useLang } from '../i18n/LangContext';
 
 export function Services() {
@@ -30,13 +30,14 @@ export function Services() {
 
   useEffect(() => {
     const loadServices = async () => {
-      let allServices = await db.services.toArray();
-      if (allServices.length === 0) {
-        await db.services.bulkAdd(DEFAULT_SERVICES);
-        allServices = await db.services.toArray();
+      try {
+        const allServices = await servicesApi.getAll();
+        setServices(allServices.sort((a, b) => a.order - b.order));
+      } catch (err) {
+        console.error('Failed to load services:', err);
+      } finally {
+        setLoading(false);
       }
-      setServices(allServices.sort((a, b) => a.order - b.order));
-      setLoading(false);
     };
     loadServices();
   }, []);
