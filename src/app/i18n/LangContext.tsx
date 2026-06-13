@@ -20,7 +20,7 @@ export const translations = {
       btnServices: 'Наши памятники',
       btnDonate: 'Поддержать проект',
       stats: [
-        { number: '', label: 'Единственный в Казахстане' },
+        { number: '☝🏻', label: 'Единственный в Казахстане' },
         { number: '2026', label: 'Год основания' },
         { number: '❤️', label: 'С любовью к каждому' },
       ],
