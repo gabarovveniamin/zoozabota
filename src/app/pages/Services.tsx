@@ -97,6 +97,12 @@ export function Services() {
     return category;
   };
 
+  const getTranslatedTag = (tag: string) => {
+    if (!tag) return '';
+    const tagsDict = t.tags as unknown as Record<string, string> | undefined;
+    return tagsDict?.[tag] || tag;
+  };
+
   const searchActive = searchQuery.trim() !== '';
   const sourceList = searchActive ? (searchResults ?? []) : services;
   const filtered = activeFilter === null
@@ -273,7 +279,7 @@ export function Services() {
                       width: 'fit-content',
                     }}
                   >
-                    {service.tag}
+                    {getTranslatedTag(service.tag)}
                   </span>
                   <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#222719', margin: 0 }}>{getServiceTitle(service)}</h3>
                   <p style={{ fontSize: '13px', color: '#556042', margin: 0, lineHeight: 1.5, flex: 1 }}>{getServiceDescription(service)}</p>

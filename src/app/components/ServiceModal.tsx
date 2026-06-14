@@ -25,6 +25,12 @@ export function ServiceModal({ service, onClose }: ServiceModalProps) {
     return s.description[lang] || s.description['ru'] || '';
   };
 
+  const getTranslatedTag = (tag: string) => {
+    if (!tag) return '';
+    const tagsDict = t.tags as unknown as Record<string, string> | undefined;
+    return tagsDict?.[tag] || tag;
+  };
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handleKey);
@@ -146,7 +152,7 @@ export function ServiceModal({ service, onClose }: ServiceModalProps) {
             >✕</button>
 
             <span style={{ display: 'inline-block', backgroundColor: '#d0e0bd', color: '#222719', fontSize: '12px', fontWeight: 700, padding: '5px 14px', borderRadius: '14px', width: 'fit-content' }}>
-              {service.tag}
+              {getTranslatedTag(service.tag)}
             </span>
             <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#222719', margin: 0, lineHeight: 1.2 }}>{getServiceTitle(service)}</h2>
             <p style={{ fontSize: '14px', color: '#556042', margin: 0, lineHeight: 1.7 }}>{getServiceDescription(service)}</p>

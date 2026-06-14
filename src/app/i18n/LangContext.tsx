@@ -163,6 +163,15 @@ export const translations = {
       contactsTitle: 'Контакты',
       socialsTitle: 'Мы в соцсетях',
       documents: 'Документы',
+      devBy: 'Разработка сайта: @gabarovveniamin',
+    },
+    tags: {
+      'Гранит': 'Гранит',
+      'Мрамор': 'Мрамор',
+      'Дерево': 'Дерево',
+      'Премиум': 'Премиум',
+      'Бюджет': 'Бюджет',
+      'VIP': 'VIP',
     },
     // 404
     notFound: {
@@ -328,6 +337,15 @@ export const translations = {
       contactsTitle: 'Байланыс',
       socialsTitle: 'Әлеуметтік желілер',
       documents: 'Құжаттар',
+      devBy: 'Сайтты әзірлеген: @gabarovveniamin',
+    },
+    tags: {
+      'Гранит': 'Гранит',
+      'Мрамор': 'Мәрмәр',
+      'Дерево': 'Ағаш',
+      'Премиум': 'Премиум',
+      'Бюджет': 'Бюджет',
+      'VIP': 'VIP',
     },
     notFound: {
       title404: '404',
@@ -492,6 +510,15 @@ export const translations = {
       contactsTitle: 'Contacts',
       socialsTitle: 'Social Media',
       documents: 'Documents',
+      devBy: 'Website developed by: @gabarovveniamin',
+    },
+    tags: {
+      'Гранит': 'Granite',
+      'Мрамор': 'Marble',
+      'Дерево': 'Wood',
+      'Премиум': 'Premium',
+      'Бюджет': 'Budget',
+      'VIP': 'VIP',
     },
     notFound: {
       title404: '404',
