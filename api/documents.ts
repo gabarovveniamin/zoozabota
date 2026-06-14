@@ -4,12 +4,7 @@ import { executeQuery } from './db/init.js';
 
 const MOCK_PDF = 'JVBERi0xLjQKMSAwIG9iagogIDw8IC9UeXBlIC9DYXRhbG9nCiAgICAgL1BhZ2VzIDIgMCBSCiAgPj4KZW5kb2JqCjIgMCBvYmoKICA8PCAvVHlwZSAvUGFnZXMKICAgICAvS2lkcyBbIDMgMCBSIF0KICAgICAvQ291bnQgMQogID4+CmVuZG9iagozIDAgb2JqCiAgPDwgL1R5cGUgL1BhZ2UKICAgICAvUGFyZW50IDIgMCBSCiAgICAgL01lZGlhQm94IFsgMCAwIDU5NSA4NDIgXQogICAgIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDQgMCBSID4+ID4+CiAgICAgL0NvbnRlbnRzIDUgMCBSCiAgPj4KZW5kb2JqCjQgMCBvYmoKICA8PCAvVHlwZSAvRm9udAogICAgIC9TdWJ0eXBlIC9UeXBlMQogICAgIC9CYXNlRm9udCAvSGVsdmV0aWNhCiAgPj4KZW5kb2JqCjUgMCBvYmoKICA8PCAvTGVuZ3RoIDQ0ID4+CnN0cmVhbQpCVAovRjEgMjQgVGYKMTAwIDcwMCBUZAooWm9vWmFib3RhIE9mZmljaWFsIERvY3VtZW50KSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDcwIDAwMDAwIG4gCjAwMDAwMDAxNDMgMDAwMDAgbiAKMDAwMDAwMDI3MSAwMDAwMCBuIAowMDAwMDAwMzU1IDAwMDAwIG4gCnRyYWlsZXIKICA8PCAvU2l6ZSA2CiAgICAgL1Jvb3QgMSAwIFIKICA+PgpzdGFydHhyZWYKNDQ4CiUlRU9G';
 
-const DEFAULT_DOCUMENTS = [
-  { title: 'Публичный договор-оферта', description: 'Регулирует порядок оказания услуг мемориального комплекса.', fileName: 'public_offer_zoozabota.pdf', fileData: MOCK_PDF, fileType: 'application/pdf' },
-  { title: 'Правила посещения комплекса', description: 'Правила поведения на территории колумбария и мемориала.', fileName: 'rules_and_regulations.pdf', fileData: MOCK_PDF, fileType: 'application/pdf' },
-  { title: 'Политика конфиденциальности', description: 'Правила сбора, обработки и защиты персональных данных.', fileName: 'privacy_policy_zoozabota.pdf', fileData: MOCK_PDF, fileType: 'application/pdf' },
-  { title: 'Устав фонда «Өмірге Үміт Бер»', description: 'Учредительный документ общественного фонда.', fileName: 'charter_omirge_umit_ber.pdf', fileData: MOCK_PDF, fileType: 'application/pdf' },
-];
+const DEFAULT_DOCUMENTS: any[] = [];
 
 function mapRow(r: any) {
   return {

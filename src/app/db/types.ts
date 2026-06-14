@@ -68,37 +68,4 @@ export const DEFAULT_SERVICES: Omit<Service, 'id'>[] = [
   { tag: 'VIP', title: 'Индивидуальный заказ', description: 'Уникальный памятник по вашему эскизу из любого материала на выбор.', price: 'по запросу', category: 'Индивидуальные', order: 6 },
 ];
 
-export const DEFAULT_DOCUMENTS: Omit<DocumentItem, 'id'>[] = [
-  {
-    title: 'Публичный договор-оферта',
-    description: 'Регулирует порядок оказания услуг мемориального комплекса.',
-    fileName: 'public_offer_zoozabota.pdf',
-    fileData: MOCK_PDF,
-    fileType: 'application/pdf',
-    uploadedAt: new Date('2026-06-13T12:00:00Z').toISOString(),
-  },
-  {
-    title: 'Правила посещения комплекса',
-    description: 'Правила поведения на территории колумбария и мемориала.',
-    fileName: 'rules_and_regulations.pdf',
-    fileData: MOCK_PDF,
-    fileType: 'application/pdf',
-    uploadedAt: new Date('2026-06-13T12:00:00Z').toISOString(),
-  },
-  {
-    title: 'Политика конфиденциальности',
-    description: 'Правила сбора, обработки и защиты персональных данных.',
-    fileName: 'privacy_policy_zoozabota.pdf',
-    fileData: MOCK_PDF,
-    fileType: 'application/pdf',
-    uploadedAt: new Date('2026-06-13T12:00:00Z').toISOString(),
-  },
-  {
-    title: 'Устав фонда «Өмірге Үміт Бер»',
-    description: 'Учредительный документ общественного фонда.',
-    fileName: 'charter_omirge_umit_ber.pdf',
-    fileData: MOCK_PDF,
-    fileType: 'application/pdf',
-    uploadedAt: new Date('2026-06-13T12:00:00Z').toISOString(),
-  },
-];
+export const DEFAULT_DOCUMENTS: Omit<DocumentItem, 'id'>[] = [];

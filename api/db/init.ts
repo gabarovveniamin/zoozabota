@@ -12,13 +12,6 @@ const DEFAULT_SERVICES = [
   { tag: 'VIP', title: 'Индивидуальный заказ', description: 'Уникальный памятник по вашему эскизу из любого материала на выбор.', price: 'по запросу', category: 'Индивидуальные', order: 6 },
 ];
 
-const DEFAULT_DOCUMENTS = [
-  { title: 'Публичный договор-оферта', description: 'Регулирует порядок оказания услуг мемориального комплекса.', fileName: 'public_offer_zoozabota.pdf', fileData: MOCK_PDF, fileType: 'application/pdf' },
-  { title: 'Правила посещения комплекса', description: 'Правила поведения на территории колумбария и мемориала.', fileName: 'rules_and_regulations.pdf', fileData: MOCK_PDF, fileType: 'application/pdf' },
-  { title: 'Политика конфиденциальности', description: 'Правила сбора, обработки и защиты персональных данных.', fileName: 'privacy_policy_zoozabota.pdf', fileData: MOCK_PDF, fileType: 'application/pdf' },
-  { title: 'Устав фонда «Өмірге Үміт Бер»', description: 'Учредительный документ общественного фонда.', fileName: 'charter_omirge_umit_ber.pdf', fileData: MOCK_PDF, fileType: 'application/pdf' },
-];
-
 let initPromise: Promise<void> | null = null;
 
 export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
@@ -124,17 +117,12 @@ export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
           `;
         }
       }
-
-      // 5. Seed documents
-      const docCount = await sql`SELECT COUNT(*)::int as count FROM documents`;
-      if (Number(docCount[0].count) === 0) {
-        for (const d of DEFAULT_DOCUMENTS) {
-          await sql`
-            INSERT INTO documents (title, description, file_name, file_data, file_type, uploaded_at)
-            VALUES (${d.title}, ${d.description}, ${d.fileName}, ${d.fileData}, ${d.fileType}, NOW())
-          `;
-        }
-      }
+      // 5. Seed documents (Disabled - documents will be uploaded via Admin panel)
+      // Clean up any previously seeded mock/default documents if they exist
+      await sql`
+        DELETE FROM documents 
+        WHERE file_name IN ('public_offer_zoozabota.pdf', 'rules_and_regulations.pdf', 'privacy_policy_zoozabota.pdf', 'charter_omirge_umit_ber.pdf')
+      `;
       console.log('Database tables initialized successfully!');
     })();
   }
