@@ -33,7 +33,7 @@ export function Footer() {
           <p style={{ color: '#556042', fontSize: '13px', margin: 0 }}>
             {t.footer.address}
           </p>
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <Link
               to="/documents"
               style={{
@@ -48,6 +48,27 @@ export function Footer() {
             >
               {t.footer.documents}
             </Link>
+            {t.footer.devBy ? (
+              <div style={{ fontSize: '13px', color: '#556042', marginTop: '4px' }}>
+                {t.footer.devBy.split('@')[0]}
+                <a
+                  href="https://t.me/gabarovveniamin"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#222719',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    borderBottom: '1px dashed #222719',
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  @gabarovveniamin
+                </a>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -103,48 +124,6 @@ export function Footer() {
           >
             📸 @zoo_zabota.kz
           </a>
-        </div>
-
-        {/* Divider & Dev Credits */}
-        <div
-          style={{
-            width: '100%',
-            borderTop: '1px solid rgba(34, 39, 25, 0.15)',
-            marginTop: '32px',
-            paddingTop: '24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '16px',
-            fontSize: '13px',
-            color: '#556042',
-          }}
-        >
-          <div></div>
-          <div>
-            {t.footer.devBy ? (
-              <span>
-                {t.footer.devBy.split('@')[0]}
-                <a
-                  href="https://t.me/gabarovveniamin"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: '#222719',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    borderBottom: '1px dashed #222719',
-                    transition: 'opacity 0.2s',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
-                >
-                  @gabarovveniamin
-                </a>
-              </span>
-            ) : null}
-          </div>
         </div>
       </div>
     </footer>
