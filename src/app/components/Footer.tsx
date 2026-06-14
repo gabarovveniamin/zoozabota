@@ -48,27 +48,6 @@ export function Footer() {
             >
               {t.footer.documents}
             </Link>
-            {t.footer.devBy ? (
-              <div style={{ fontSize: '13px', color: '#556042', marginTop: '4px' }}>
-                {t.footer.devBy.split('@')[0]}
-                <a
-                  href="https://t.me/gabarovveniamin"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: '#222719',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    borderBottom: '1px dashed #222719',
-                    transition: 'opacity 0.2s',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
-                >
-                  @gabarovveniamin
-                </a>
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -98,7 +77,7 @@ export function Footer() {
         </div>
 
         {/* Far right: Socials */}
-        <div style={{ flex: '1 1 200px', minWidth: '160px' }}>
+        <div style={{ flex: '1 1 200px', minWidth: '160px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <span style={{ fontWeight: 600, fontSize: '12px', color: '#556042', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '12px' }}>
             {t.footer.socialsTitle}
           </span>
@@ -117,13 +96,35 @@ export function Footer() {
               backgroundColor: 'rgba(255,255,255,0.4)',
               padding: '8px 16px',
               borderRadius: '20px',
-              transition: 'background-color 0.2s'
+              transition: 'background-color 0.2s',
+              marginBottom: '12px'
             }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.7)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.4)'; }}
           >
             📸 @zoo_zabota.kz
           </a>
+          {t.footer.devBy ? (
+            <div style={{ fontSize: '13px', color: '#556042', marginTop: '4px' }}>
+              {t.footer.devBy.split('@')[0]}
+              <a
+                href="https://t.me/gabarovveniamin"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: '#222719',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  borderBottom: '1px dashed #222719',
+                  transition: 'opacity 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+              >
+                @gabarovveniamin
+              </a>
+            </div>
+          ) : null}
         </div>
       </div>
     </footer>
