@@ -1,6 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { neon } from '@neondatabase/serverless';
-import { executeQuery, verifyPassword } from './db/init.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,48 +6,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-  if (!databaseUrl) {
-    return res.status(500).json({ error: 'Neither DATABASE_URL nor POSTGRES_URL environment variables are defined. Please link your Neon database in Vercel settings.' });
-  }
-
-  try {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    const { phone, password } = req.body;
-
-    if (!phone || !password) {
-      return res.status(400).json({ error: 'Missing phone or password' });
-    }
-
-    const sql = neon(databaseUrl);
-
-    // Normalize phone number to digits only for reliable lookup
-    const normalizedPhone = phone.replace(/\D/g, '');
-
-    // Fetch all users to find match (normalizing on Node side is most robust)
-    const allUsers = await executeQuery(sql, () => sql`SELECT first_name, last_name, phone, password_hash FROM users`);
-    const user = allUsers.find((u: any) => u.phone.replace(/\D/g, '') === normalizedPhone);
-
-    if (!user) {
-      return res.status(401).json({ error: 'Неверный номер телефона или пароль' });
-    }
-
-    // Verify password hash
-    const isValid = verifyPassword(password, user.password_hash);
-    if (!isValid) {
-      return res.status(401).json({ error: 'Неверный номер телефона или пароль' });
-    }
-
-    return res.status(200).json({
-      firstName: user.first_name,
-      lastName: user.last_name,
-      phone: user.phone,
-    });
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ error: err.message ?? 'Internal server error' });
-  }
+  // Login is temporarily disabled
+  return res.status(403).json({ error: 'Login is temporarily disabled' });
 }

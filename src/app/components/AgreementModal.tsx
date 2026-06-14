@@ -1,17 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '../i18n/LangContext';
-import { authApi } from '../db/api';
 
 export function AgreementModal() {
   const { t } = useLang();
-  const { agreement, auth } = t;
+  const { agreement } = t;
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<'agreement' | 'login'>('agreement');
-
-  // Form states
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
   useEffect(() => {
     // Check if the user has already accepted the terms
@@ -33,84 +26,11 @@ export function AgreementModal() {
 
   const handleAccept = () => {
     localStorage.setItem('agreement_accepted', 'true');
-    // Set registered to true for backward compatibility
+    // Set registered to true for backward compatibility with other checks
     localStorage.setItem('user_registered', 'true');
     dispatchAuthChange();
     setIsOpen(false);
     document.body.style.overflow = '';
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    if (!input) {
-      setPhone('');
-      return;
-    }
-    if (phone.startsWith('+7 (') && input.length < 4) {
-      setPhone('');
-      return;
-    }
-    const digits = input.replace(/\D/g, '');
-    if (digits.length === 0) {
-      setPhone('');
-      return;
-    }
-    let rest = digits;
-    if (digits[0] === '7' || digits[0] === '8') {
-      rest = digits.slice(1);
-    }
-    rest = rest.slice(0, 10);
-    let formatted = '+7 (';
-    if (rest.length > 0) {
-      formatted += rest.slice(0, 3);
-    }
-    if (rest.length >= 3) {
-      formatted += ') ';
-    }
-    if (rest.length > 3) {
-      formatted += rest.slice(3, 6);
-    }
-    if (rest.length >= 6) {
-      formatted += ' ';
-    }
-    if (rest.length > 6) {
-      formatted += rest.slice(6, 8);
-    }
-    if (rest.length >= 8) {
-      formatted += ' ';
-    }
-    if (rest.length > 8) {
-      formatted += rest.slice(8, 10);
-    }
-    setPhone(formatted);
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!phone.trim() || !password.trim()) {
-      setError(auth.errorFields);
-      return;
-    }
-
-    try {
-      const profile = await authApi.login({
-        phone: phone.trim(),
-        password: password.trim(),
-      });
-
-      localStorage.setItem('user_profile', JSON.stringify(profile));
-      localStorage.setItem('user_registered', 'true');
-      localStorage.setItem('user_logged_in', 'true');
-      localStorage.setItem('agreement_accepted', 'true');
-
-      dispatchAuthChange();
-      setIsOpen(false);
-      document.body.style.overflow = '';
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError(auth.errorIncorrect);
-    }
   };
 
   if (!isOpen) return null;
@@ -146,237 +66,96 @@ export function AgreementModal() {
           animation: 'agreementSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Agreement Step */}
-        {step === 'agreement' && (
-          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {/* Header */}
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Header */}
+          <div
+            style={{
+              padding: '20px 28px',
+              backgroundColor: 'white',
+              borderBottom: '1px solid #E2EBD5',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}
+          >
             <div
               style={{
-                padding: '20px 28px',
-                backgroundColor: 'white',
-                borderBottom: '1px solid #E2EBD5',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: '#d0e0bd',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
+                justifyContent: 'center',
+                fontSize: '18px',
+                color: '#222719',
               }}
             >
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: '#d0e0bd',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '18px',
-                  color: '#222719',
-                }}
-              >
-                📄
-              </div>
-              <h2
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  color: '#222719',
-                  margin: 0,
-                }}
-              >
-                {agreement.title}
-              </h2>
+              📄
             </div>
-
-            {/* Content Body */}
-            <div
+            <h2
               style={{
-                padding: '28px 28px 20px',
-                overflowY: 'auto',
-                fontSize: '14.5px',
-                color: '#556042',
-                lineHeight: 1.65,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px',
-                maxHeight: '50vh',
+                fontSize: '20px',
+                fontWeight: 700,
+                color: '#222719',
+                margin: 0,
               }}
             >
-              <p style={{ margin: 0, fontWeight: 500, color: '#222719' }}>{agreement.p1}</p>
-              <p style={{ margin: 0 }}>{agreement.p2}</p>
-              <p style={{ margin: 0 }}>{agreement.p3}</p>
-              <p style={{ margin: 0 }}>{agreement.p4}</p>
-              <p style={{ margin: 0 }}>{agreement.p5}</p>
-            </div>
-
-            {/* Footer Actions */}
-            <div
-              style={{
-                padding: '16px 28px',
-                backgroundColor: 'white',
-                borderTop: '1px solid #E2EBD5',
-                display: 'flex',
-                justifyContent: 'flex-end',
-              }}
-            >
-              <button
-                onClick={handleAccept}
-                style={{
-                  backgroundColor: '#d0e0bd',
-                  color: '#222719',
-                  border: 'none',
-                  padding: '12px 32px',
-                  borderRadius: '20px',
-                  fontSize: '14.5px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget).style.backgroundColor = '#b8cba3'; }}
-                onMouseLeave={(e) => { (e.currentTarget).style.backgroundColor = '#d0e0bd'; }}
-              >
-                {agreement.btnAccept}
-              </button>
-            </div>
+              {agreement.title}
+            </h2>
           </div>
-        )}
 
-        {/* Login Step */}
-        {step === 'login' && (
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {/* Header */}
-            <div
+          {/* Content Body */}
+          <div
+            style={{
+              padding: '28px 28px 20px',
+              overflowY: 'auto',
+              fontSize: '14.5px',
+              color: '#556042',
+              lineHeight: 1.65,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              maxHeight: '50vh',
+            }}
+          >
+            <p style={{ margin: 0, fontWeight: 500, color: '#222719' }}>{agreement.p1}</p>
+            <p style={{ margin: 0 }}>{agreement.p2}</p>
+            <p style={{ margin: 0 }}>{agreement.p3}</p>
+            <p style={{ margin: 0 }}>{agreement.p4}</p>
+            <p style={{ margin: 0 }}>{agreement.p5}</p>
+          </div>
+
+          {/* Footer Actions */}
+          <div
+            style={{
+              padding: '16px 28px',
+              backgroundColor: 'white',
+              borderTop: '1px solid #E2EBD5',
+              display: 'flex',
+              justifyContent: 'flex-end',
+            }}
+          >
+            <button
+              onClick={handleAccept}
               style={{
-                padding: '20px 28px',
-                backgroundColor: 'white',
-                borderBottom: '1px solid #E2EBD5',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
+                backgroundColor: '#d0e0bd',
+                color: '#222719',
+                border: 'none',
+                padding: '12px 32px',
+                borderRadius: '20px',
+                fontSize: '14.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
               }}
+              onMouseEnter={(e) => { (e.currentTarget).style.backgroundColor = '#b8cba3'; }}
+              onMouseLeave={(e) => { (e.currentTarget).style.backgroundColor = '#d0e0bd'; }}
             >
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: '#d0e0bd',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '18px',
-                  color: '#222719',
-                }}
-              >
-                🔐
-              </div>
-              <h2
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  color: '#222719',
-                  margin: 0,
-                }}
-              >
-                {auth.loginTitle}
-              </h2>
-            </div>
-
-            {/* Content Body */}
-            <div
-              style={{
-                padding: '28px',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-                maxHeight: '50vh',
-              }}
-            >
-              {error && (
-                <div style={{ color: '#e53e3e', fontSize: '13px', fontWeight: 500, backgroundColor: '#fde8e8', padding: '10px 14px', borderRadius: '10px', border: '1px solid #fecaca' }}>
-                  ⚠️ {error}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.phoneLabel}</label>
-                <input
-                  type="tel"
-                  placeholder="+7 (747) 545 08 07"
-                  required
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    border: '1.5px solid #E2EBD5',
-                    fontSize: '14.5px',
-                    outline: 'none',
-                    color: '#222719',
-                    backgroundColor: 'white',
-                    transition: 'border-color 0.2s',
-                  }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#556042' }}>{auth.passwordLabel}</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    border: '1.5px solid #E2EBD5',
-                    fontSize: '14.5px',
-                    outline: 'none',
-                    color: '#222719',
-                    backgroundColor: 'white',
-                    transition: 'border-color 0.2s',
-                  }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = '#c8dfa0'; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E2EBD5'; }}
-                />
-              </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div
-              style={{
-                padding: '16px 28px',
-                backgroundColor: 'white',
-                borderTop: '1px solid #E2EBD5',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                gap: '16px',
-              }}
-            >
-              <button
-                type="submit"
-                style={{
-                  backgroundColor: '#d0e0bd',
-                  color: '#222719',
-                  border: 'none',
-                  padding: '12px 32px',
-                  borderRadius: '20px',
-                  fontSize: '14.5px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget).style.backgroundColor = '#b8cba3'; }}
-                onMouseLeave={(e) => { (e.currentTarget).style.backgroundColor = '#d0e0bd'; }}
-              >
-                {auth.btnLogin}
-              </button>
-            </div>
-          </form>
-        )}
+              {agreement.btnAccept}
+            </button>
+          </div>
+        </div>
       </div>
 
       <style>{`
