@@ -1,4 +1,4 @@
-import { sendTelegramNotification } from '../api/utils/telegram.js';
+import { sendTelegramNotification } from '../api/_utils/telegram.js';
 
 console.log('🚀 Отправка тестового уведомления для заявки на питомца...');
 await sendTelegramNotification('pet', {

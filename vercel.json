@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/api/search-pets",
+      "destination": "/api/pets"
+    },
+    {
+      "source": "/api/search-services",
+      "destination": "/api/services"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

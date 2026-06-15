@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { neon } from '@neondatabase/serverless';
-import { executeQuery, ensureTablesExist } from './db/init.js';
+import { executeQuery, ensureTablesExist } from './_db/init.js';
 
 const DEFAULT_SERVICES = [
   { tag: 'Гранит', title: 'Гранитный стандарт', description: 'Классический гранитный памятник с гравировкой имени, дат и фотографии питомца.', price: 'от 45 000 ₸', category: 'Гранитные', order: 1 },
@@ -51,7 +51,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const sql = neon(databaseUrl);
     if (req.method === 'GET') {
-      const rows = await executeQuery(sql, () => sql`SELECT * FROM services ORDER BY sort_order ASC`);
+      const q = req.query.q as string | undefined;
+      let rows;
+      if (q) {
+        rows = await executeQuery(sql, () => sql`
+          SELECT *,
+            GREATEST(
+              similarity(tag, ${q}),
+              similarity(COALESCE(category, ''), ${q}),
+              similarity(
+                CASE
+                  WHEN jsonb_typeof(title) = 'object' THEN
+                    COALESCE(title->>'ru', '') || ' ' || COALESCE(title->>'kz', '') || ' ' || COALESCE(title->>'en', '')
+                  ELSE COALESCE(title#>>'{}', '')
+                END,
+                ${q}
+              ),
+              similarity(
+                CASE
+                  WHEN jsonb_typeof(description) = 'object' THEN
+                    COALESCE(description->>'ru', '') || ' ' || COALESCE(description->>'kz', '') || ' ' || COALESCE(description->>'en', '')
+                  ELSE COALESCE(description#>>'{}', '')
+                END,
+                ${q}
+              )
+            ) as sim
+          FROM services
+          WHERE
+            tag % ${q} OR
+            COALESCE(category, '') % ${q} OR
+            (CASE
+              WHEN jsonb_typeof(title) = 'object' THEN
+                COALESCE(title->>'ru', '') || ' ' || COALESCE(title->>'kz', '') || ' ' || COALESCE(title->>'en', '')
+              ELSE COALESCE(title#>>'{}', '')
+            END) % ${q} OR
+            (CASE
+              WHEN jsonb_typeof(description) = 'object' THEN
+                COALESCE(description->>'ru', '') || ' ' || COALESCE(description->>'kz', '') || ' ' || COALESCE(description->>'en', '')
+              ELSE COALESCE(description#>>'{}', '')
+            END) % ${q}
+          ORDER BY sim DESC
+        `);
+      } else {
+        rows = await executeQuery(sql, () => sql`SELECT * FROM services ORDER BY sort_order ASC`);
+      }
       return res.status(200).json(rows.map(mapRow));
     }
 

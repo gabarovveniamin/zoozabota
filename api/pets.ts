@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { neon } from '@neondatabase/serverless';
-import { executeQuery } from './db/init.js';
+import { executeQuery } from './_db/init.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,7 +15,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const sql = neon(databaseUrl);
     if (req.method === 'GET') {
-      const rows = await executeQuery(sql, () => sql`SELECT * FROM pets ORDER BY created_at DESC`);
+      const q = req.query.q as string | undefined;
+      let rows;
+      if (q) {
+        rows = await executeQuery(sql, () => sql`
+          SELECT *,
+            GREATEST(
+              similarity(name, ${q}),
+              similarity(breed, ${q}),
+              similarity(COALESCE(description, ''), ${q})
+            ) as sim
+          FROM pets
+          WHERE name % ${q} OR breed % ${q} OR COALESCE(description, '') % ${q}
+          ORDER BY sim DESC
+        `);
+      } else {
+        rows = await executeQuery(sql, () => sql`SELECT * FROM pets ORDER BY created_at DESC`);
+      }
       const pets = rows.map((r: any) => ({
         id: r.id,
         name: r.name,
