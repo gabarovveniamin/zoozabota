@@ -100,6 +100,14 @@ export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
         )
       `;
 
+      await sql`
+        CREATE TABLE IF NOT EXISTS telegram_subscribers (
+          chat_id BIGINT PRIMARY KEY,
+          username VARCHAR(255),
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `;
+
       // 3. Indexes
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_name_trgm ON pets USING gin (name gin_trgm_ops)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_breed_trgm ON pets USING gin (breed gin_trgm_ops)`;

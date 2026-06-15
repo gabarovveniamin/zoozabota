@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { neon } from '@neondatabase/serverless';
 import { executeQuery } from './db/init.js';
+import { sendTelegramNotification } from './utils/telegram.js';
 
 function mapRow(r: any) {
   return {
@@ -40,6 +41,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         VALUES (${serviceId}, ${serviceTitle}, ${name}, ${phone}, ${email ?? null}, ${comment ?? null}, 'pending', NOW())
         RETURNING *
       `);
+      
+      // Send Telegram notification asynchronously
+      sendTelegramNotification('service', rows[0]).catch(err => {
+        console.error('Failed to send telegram notification for service request:', err);
+      });
+
       return res.status(201).json(mapRow(rows[0]));
     }
 
