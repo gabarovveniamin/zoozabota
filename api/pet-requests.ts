@@ -49,10 +49,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         RETURNING *
       `);
       
-      // Send Telegram notification asynchronously
-      sendTelegramNotification('pet', rows[0]).catch(err => {
+      // Send Telegram notification (await it to ensure Vercel doesn't freeze the process)
+      try {
+        await sendTelegramNotification('pet', rows[0]);
+      } catch (err) {
         console.error('Failed to send telegram notification for pet request:', err);
-      });
+      }
 
       return res.status(201).json(mapRow(rows[0]));
     }
