@@ -8,7 +8,7 @@ type ServiceFormData = {
   title: { ru: string; kz: string; en: string };
   description: { ru: string; kz: string; en: string };
   image: string;
-  price: string;
+  price: { ru: string; kz: string; en: string };
   category: string;
 };
 
@@ -33,7 +33,7 @@ const emptyForm: ServiceFormData = {
   title: { ru: '', kz: '', en: '' },
   description: { ru: '', kz: '', en: '' },
   image: '',
-  price: '',
+  price: { ru: '', kz: '', en: '' },
   category: 'Гранитные',
 };
 
@@ -212,12 +212,20 @@ const ServiceFormFields = ({
         {/* Row 2: price + category */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Цена</label>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>
+              Цена ({activeLang.toUpperCase()})
+            </label>
             <input
               type="text"
               placeholder="от 45 000 ₸"
-              value={form.price}
-              onChange={(e) => setForm((prev: any) => ({ ...prev, price: e.target.value }))}
+              value={form.price[activeLang] || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setForm((prev: any) => ({
+                  ...prev,
+                  price: { ...prev.price, [activeLang]: val }
+                }));
+              }}
               style={inputStyle}
             />
           </div>
@@ -883,6 +891,12 @@ export function Admin() {
     return service.description?.ru || service.description?.kz || service.description?.en || '';
   };
 
+  const getServicePrice = (service: Service) => {
+    if (!service.price) return '';
+    if (typeof service.price === 'string') return service.price;
+    return service.price.ru || service.price.kz || service.price.en || '';
+  };
+
   const handleAddService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addForm.tag || !addForm.title.ru || !addForm.description.ru) {
@@ -916,7 +930,7 @@ export function Admin() {
       title: normalizeField(service.title),
       description: normalizeField(service.description),
       image: service.image || '',
-      price: service.price || '',
+      price: normalizeField(service.price),
       category: service.category || 'Гранитные',
     });
     setEditPreview(service.image || '');
@@ -1415,7 +1429,7 @@ export function Admin() {
                   >
                     <option value="">-- Выберите памятник --</option>
                     {services.map((s) => (
-                      <option key={s.id} value={s.id}>{getServiceTitle(s)} ({s.price})</option>
+                      <option key={s.id} value={s.id}>{getServiceTitle(s)} ({getServicePrice(s)})</option>
                     ))}
                   </select>
                 </div>
@@ -1629,8 +1643,8 @@ export function Admin() {
                         </div>
                         <h3 style={{ margin: 0, color: '#222719', fontSize: '16px' }}>{getServiceTitle(service)}</h3>
                         <p style={{ margin: 0, color: '#556042', fontSize: '13px', lineHeight: 1.5 }}>{getServiceDescription(service)}</p>
-                        {service.price && (
-                          <p style={{ margin: 0, color: '#222719', fontWeight: 700, fontSize: '15px' }}>{service.price}</p>
+                        {getServicePrice(service) && (
+                          <p style={{ margin: 0, color: '#222719', fontWeight: 700, fontSize: '15px' }}>{getServicePrice(service)}</p>
                         )}
                       </div>
 

@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS services (
   title JSONB NOT NULL, -- supports both string and {ru, kz, en}
   description JSONB NOT NULL, -- supports both string and {ru, kz, en}
   image TEXT, -- base64 encoded image
-  price VARCHAR(100),
+  price JSONB,
   category VARCHAR(100),
   sort_order INTEGER NOT NULL DEFAULT 0
 );

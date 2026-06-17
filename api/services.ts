@@ -3,12 +3,12 @@ import { neon } from '@neondatabase/serverless';
 import { executeQuery, ensureTablesExist } from './_db/init.js';
 
 const DEFAULT_SERVICES = [
-  { tag: 'Гранит', title: 'Гранитный стандарт', description: 'Классический гранитный памятник с гравировкой имени, дат и фотографии питомца.', price: 'от 45 000 ₸', category: 'Гранитные', order: 1 },
-  { tag: 'Мрамор', title: 'Мраморный классик', description: 'Элегантный белый мрамор с индивидуальной надписью и орнаментом.', price: 'от 65 000 ₸', category: 'Мраморные', order: 2 },
-  { tag: 'Дерево', title: 'Деревянный крест', description: 'Тёплый деревянный памятный знак ручной работы из натуральных пород.', price: 'от 18 000 ₸', category: 'Деревянные', order: 3 },
-  { tag: 'Премиум', title: 'Гранит Премиум', description: 'Премиальный гранит с полировкой, цветным портретом и именной гравировкой.', price: 'от 120 000 ₸', category: 'Гранитные', order: 4 },
-  { tag: 'Бюджет', title: 'Именная табличка', description: 'Компактная металлическая табличка с именем и датами — доступный вариант.', price: 'от 8 000 ₸', category: 'Гранитные', order: 5 },
-  { tag: 'VIP', title: 'Индивидуальный заказ', description: 'Уникальный памятник по вашему эскизу из любого материала на выбор.', price: 'по запросу', category: 'Индивидуальные', order: 6 },
+  { tag: 'Гранит', title: 'Гранитный стандарт', description: 'Классический гранитный памятник с гравировкой имени, дат и фотографии питомца.', price: { ru: 'от 45 000 ₸', kz: '45 000 ₸-ден бастап', en: 'from 45 000 ₸' }, category: 'Гранитные', order: 1 },
+  { tag: 'Мрамор', title: 'Мраморный классик', description: 'Элегантный белый мрамор с индивидуальной надписью и орнаментом.', price: { ru: 'от 65 000 ₸', kz: '65 000 ₸-ден бастап', en: 'from 65 000 ₸' }, category: 'Мраморные', order: 2 },
+  { tag: 'Дерево', title: 'Деревянный крест', description: 'Тёплый деревянный памятный знак ручной работы из натуральных пород.', price: { ru: 'от 18 000 ₸', kz: '18 000 ₸-ден бастап', en: 'from 18 000 ₸' }, category: 'Деревянные', order: 3 },
+  { tag: 'Премиум', title: 'Гранит Премиум', description: 'Премиальный гранит с полировкой, цветным портретом и именной гравировкой.', price: { ru: 'от 120 000 ₸', kz: '120 000 ₸-ден бастап', en: 'from 120 000 ₸' }, category: 'Гранитные', order: 4 },
+  { tag: 'Бюджет', title: 'Именная табличка', description: 'Компактная металлическая табличка с именем и датами — доступный вариант.', price: { ru: 'от 8 000 ₸', kz: '8 000 ₸-ден бастап', en: 'from 8 000 ₸' }, category: 'Гранитные', order: 5 },
+  { tag: 'VIP', title: 'Индивидуальный заказ', description: 'Уникальный памятник по вашему эскизу из любого материала на выбор.', price: { ru: 'по запросу', kz: 'сұраныс бойынша', en: 'upon request' }, category: 'Индивидуальные', order: 6 },
 ];
 
 function parseJsonbField(val: any): any {
@@ -32,7 +32,7 @@ function mapRow(r: any) {
     title: parseJsonbField(r.title),
     description: parseJsonbField(r.description),
     image: r.image,
-    price: r.price,
+    price: parseJsonbField(r.price),
     category: r.category,
     order: r.sort_order,
   };
@@ -102,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { tag, title, description, image, price, category, order } = req.body;
       const rows = await executeQuery(sql, () => sql`
         INSERT INTO services (tag, title, description, image, price, category, sort_order)
-        VALUES (${tag}, ${JSON.stringify(title)}, ${JSON.stringify(description)}, ${image ?? null}, ${price ?? null}, ${category ?? null}, ${order})
+        VALUES (${tag}, ${JSON.stringify(title)}, ${JSON.stringify(description)}, ${image ?? null}, ${price !== undefined && price !== null ? JSON.stringify(price) : null}, ${category ?? null}, ${order})
         RETURNING *
       `);
       return res.status(201).json(mapRow(rows[0]));
@@ -122,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           title = ${title !== undefined ? JSON.stringify(title) : c.title},
           description = ${description !== undefined ? JSON.stringify(description) : c.description},
           image = ${image !== undefined ? image : c.image},
-          price = ${price !== undefined ? price : c.price},
+          price = ${price !== undefined ? (price !== null ? JSON.stringify(price) : null) : c.price},
           category = ${category !== undefined ? category : c.category},
           sort_order = ${order !== undefined ? order : c.sort_order}
         WHERE id = ${id}

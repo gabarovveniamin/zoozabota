@@ -4,12 +4,12 @@ import crypto from 'crypto';
 const MOCK_PDF = 'JVBERi0xLjQKMSAwIG9iagogIDw8IC9UeXBlIC9DYXRhbG9nCiAgICAgL1BhZ2VzIDIgMCBSCiAgPj4KZW5kb2JqCjIgMCBvYmoKICA8PCAvVHlwZSAvUGFnZXMKICAgICAvS2lkcyBbIDMgMCBSIF0KICAgICAvQ291bnQgMQogID4+CmVuZG9iagozIDAgb2JqCiAgPDwgL1R5cGUgL1BhZ2UKICAgICAvUGFyZW50IDIgMCBSCiAgICAgL01lZGlhQm94IFsgMCAwIDU5NSA4NDIgXQogICAgIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDQgMCBSID4+ID4+CiAgICAgL0NvbnRlbnRzIDUgMCBSCiAgPj4KZW5kb2JqCjQgMCBvYmoKICA8PCAvVHlwZSAvRm9udAogICAgIC9TdWJ0eXBlIC9UeXBlMQogICAgIC9CYXNlRm9udCAvSGVsdmV0aWNhCiAgPj4KZW5kb2JqCjUgMCBvYmoKICA8PCAvTGVuZ3RoIDQ0ID4+CnN0cmVhbQpCVAovRjEgMjQgVGYKMTAwIDcwMCBUZAooWm9vWmFib3RhIE9mZmljaWFsIERvY3VtZW50KSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDcwIDAwMDAwIG4gCjAwMDAwMDAxNDMgMDAwMDAgbiAKMDAwMDAwMDI3MSAwMDAwMCBuIAowMDAwMDAwMzU1IDAwMDAwIG4gCnRyYWlsZXIKICA8PCAvU2l6ZSA2CiAgICAgL1Jvb3QgMSAwIFIKICA+PgpzdGFydHhyZWYKNDQ4CiUlRU9G';
 
 const DEFAULT_SERVICES = [
-  { tag: 'Гранит', title: 'Гранитный стандарт', description: 'Классический гранитный памятник с гравировкой имени, дат и фотографии питомца.', price: 'от 45 000 ₸', category: 'Гранитные', order: 1 },
-  { tag: 'Мрамор', title: 'Мраморный классик', description: 'Элегантный белый мрамор с индивидуальной надписью и орнаментом.', price: 'от 65 000 ₸', category: 'Мраморные', order: 2 },
-  { tag: 'Дерево', title: 'Деревянный крест', description: 'Тёплый деревянный памятный знак ручной работы из натуральных пород.', price: 'от 18 000 ₸', category: 'Деревянные', order: 3 },
-  { tag: 'Премиум', title: 'Гранит Премиум', description: 'Премиальный гранит с полировкой, цветным портретом и именной гравировкой.', price: 'от 120 000 ₸', category: 'Гранитные', order: 4 },
-  { tag: 'Бюджет', title: 'Именная табличка', description: 'Компактная металлическая табличка с именем и датами — доступный вариант.', price: 'от 8 000 ₸', category: 'Гранитные', order: 5 },
-  { tag: 'VIP', title: 'Индивидуальный заказ', description: 'Уникальный памятник по вашему эскизу из любого материала на выбор.', price: 'по запросу', category: 'Индивидуальные', order: 6 },
+  { tag: 'Гранит', title: 'Гранитный стандарт', description: 'Классический гранитный памятник с гравировкой имени, дат и фотографии питомца.', price: { ru: 'от 45 000 ₸', kz: '45 000 ₸-ден бастап', en: 'from 45 000 ₸' }, category: 'Гранитные', order: 1 },
+  { tag: 'Мрамор', title: 'Мраморный классик', description: 'Элегантный белый мрамор с индивидуальной надписью и орнаментом.', price: { ru: 'от 65 000 ₸', kz: '65 000 ₸-ден бастап', en: 'from 65 000 ₸' }, category: 'Мраморные', order: 2 },
+  { tag: 'Дерево', title: 'Деревянный крест', description: 'Тёплый деревянный памятный знак ручной работы из натуральных пород.', price: { ru: 'от 18 000 ₸', kz: '18 000 ₸-ден бастап', en: 'from 18 000 ₸' }, category: 'Деревянные', order: 3 },
+  { tag: 'Премиум', title: 'Гранит Премиум', description: 'Премиальный гранит с полировкой, цветным портретом и именной гравировкой.', price: { ru: 'от 120 000 ₸', kz: '120 000 ₸-ден бастап', en: 'from 120 000 ₸' }, category: 'Гранитные', order: 4 },
+  { tag: 'Бюджет', title: 'Именная табличка', description: 'Компактная металлическая табличка с именем и датами — доступный вариант.', price: { ru: 'от 8 000 ₸', kz: '8 000 ₸-ден бастап', en: 'from 8 000 ₸' }, category: 'Гранитные', order: 5 },
+  { tag: 'VIP', title: 'Индивидуальный заказ', description: 'Уникальный памятник по вашему эскизу из любого материала на выбор.', price: { ru: 'по запросу', kz: 'сұраныс бойынша', en: 'upon request' }, category: 'Индивидуальные', order: 6 },
 ];
 
 let initPromise: Promise<void> | null = null;
@@ -57,7 +57,7 @@ export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
           title JSONB NOT NULL,
           description JSONB NOT NULL,
           image TEXT,
-          price VARCHAR(100),
+          price JSONB,
           category VARCHAR(100),
           sort_order INTEGER NOT NULL DEFAULT 0
         )
@@ -115,13 +115,34 @@ export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
       await sql`CREATE INDEX IF NOT EXISTS idx_services_tag_trgm ON services USING gin (tag gin_trgm_ops)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone)`;
 
+      // 3.1 Migration: Safe conversion of price column to JSONB if not already
+      const colInfo = await sql`
+        SELECT data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'services' AND column_name = 'price'
+      `;
+      if (colInfo.length > 0 && colInfo[0].data_type !== 'jsonb') {
+        console.log('Migrating services.price column to JSONB...');
+        await sql`
+          ALTER TABLE services 
+          ALTER COLUMN price TYPE JSONB 
+          USING (
+            CASE 
+              WHEN price IS NULL THEN NULL
+              WHEN price LIKE '{%' THEN price::jsonb
+              ELSE jsonb_build_object('ru', price, 'kz', price, 'en', price)
+            END
+          )
+        `;
+      }
+
       // 4. Seed services
       const svcCount = await sql`SELECT COUNT(*)::int as count FROM services`;
       if (Number(svcCount[0].count) === 0) {
         for (const s of DEFAULT_SERVICES) {
           await sql`
             INSERT INTO services (tag, title, description, image, price, category, sort_order)
-            VALUES (${s.tag}, ${JSON.stringify(s.title)}, ${JSON.stringify(s.description)}, ${null}, ${s.price}, ${s.category}, ${s.order})
+            VALUES (${s.tag}, ${JSON.stringify(s.title)}, ${JSON.stringify(s.description)}, ${null}, ${JSON.stringify(s.price)}, ${s.category}, ${s.order})
           `;
         }
       }

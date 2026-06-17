@@ -25,6 +25,12 @@ export function ServiceModal({ service, onClose }: ServiceModalProps) {
     return s.description[lang] || s.description['ru'] || '';
   };
 
+  const getServicePrice = (s: Service) => {
+    if (!s.price) return '';
+    if (typeof s.price === 'string') return s.price;
+    return s.price[lang] || s.price['ru'] || '';
+  };
+
   const getTranslatedTag = (tag: string) => {
     if (!tag) return '';
     const tagsDict = t.tags as unknown as Record<string, string> | undefined;
@@ -163,10 +169,10 @@ export function ServiceModal({ service, onClose }: ServiceModalProps) {
               ))}
             </div>
 
-            {service.price && (
+            {getServicePrice(service) && (
               <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #E2EBD5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '13px', color: '#888' }}>{m.priceLabel}</span>
-                <span style={{ fontSize: '22px', fontWeight: 800, color: '#222719' }}>{service.price}</span>
+                <span style={{ fontSize: '22px', fontWeight: 800, color: '#222719' }}>{getServicePrice(service)}</span>
               </div>
             )}
           </div>

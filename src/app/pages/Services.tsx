@@ -25,6 +25,12 @@ export function Services() {
     return s.description[lang] || s.description['ru'] || '';
   };
 
+  const getServicePrice = (s: Service) => {
+    if (!s.price) return '';
+    if (typeof s.price === 'string') return s.price;
+    return s.price[lang] || s.price['ru'] || '';
+  };
+
   // Reset filter and search query when language changes
   useEffect(() => {
     setActiveFilter(null);
@@ -283,8 +289,8 @@ export function Services() {
                   </span>
                   <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#222719', margin: 0 }}>{getServiceTitle(service)}</h3>
                   <p style={{ fontSize: '13px', color: '#556042', margin: 0, lineHeight: 1.5, flex: 1 }}>{getServiceDescription(service)}</p>
-                  {service.price && (
-                    <p style={{ fontSize: '16px', fontWeight: 700, color: '#222719', margin: 0 }}>{service.price}</p>
+                  {getServicePrice(service) && (
+                    <p style={{ fontSize: '16px', fontWeight: 700, color: '#222719', margin: 0 }}>{getServicePrice(service)}</p>
                   )}
                 </div>
 
