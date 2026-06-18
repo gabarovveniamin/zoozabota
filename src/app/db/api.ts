@@ -134,6 +134,18 @@ export const adminApi = {
     }),
 };
 
+// ===== SETTINGS =====
+export const settingsApi = {
+  get: (): Promise<Record<string, string>> =>
+    request<Record<string, string>>('/settings'),
+
+  update: (settings: Record<string, string>): Promise<Record<string, string>> =>
+    request<Record<string, string>>('/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    }),
+};
+
 // ===== USER AUTH =====
 export const authApi = {
   register: (user: { firstName: string; lastName: string; phone: string; password: string }): Promise<{ firstName: string; lastName: string; phone: string }> =>

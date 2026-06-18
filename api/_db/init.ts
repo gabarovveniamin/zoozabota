@@ -108,6 +108,13 @@ export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
         )
       `;
 
+      await sql`
+        CREATE TABLE IF NOT EXISTS settings (
+          key VARCHAR(255) PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `;
+
       // 3. Indexes
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_name_trgm ON pets USING gin (name gin_trgm_ops)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_breed_trgm ON pets USING gin (breed gin_trgm_ops)`;
@@ -152,6 +159,15 @@ export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
         DELETE FROM documents 
         WHERE file_name IN ('public_offer_zoozabota.pdf', 'rules_and_regulations.pdf', 'privacy_policy_zoozabota.pdf', 'charter_omirge_umit_ber.pdf')
       `;
+
+      // 6. Seed default settings
+      const settingsCount = await sql`SELECT COUNT(*)::int as count FROM settings`;
+      if (Number(settingsCount[0].count) === 0) {
+        await sql`INSERT INTO settings (key, value) VALUES ('construction_collected', '4200000')`;
+        await sql`INSERT INTO settings (key, value) VALUES ('construction_goal', '10000000')`;
+        await sql`INSERT INTO settings (key, value) VALUES ('donations_collected', '1500000')`;
+        await sql`INSERT INTO settings (key, value) VALUES ('donations_goal', '5000000')`;
+      }
       console.log('Database tables initialized successfully!');
     })();
   }

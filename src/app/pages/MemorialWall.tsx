@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { PageHero } from '../components/PageHero';
 import { petsApi, petRequestsApi, searchApi, type Pet } from '../db/api';
 import { useLang } from '../i18n/LangContext';
+import { toast } from 'sonner';
+import { compressImage } from '../utils/image';
+
 
 export function MemorialWall() {
   const { t } = useLang();
@@ -12,6 +15,7 @@ export function MemorialWall() {
   const [showForm, setShowForm] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchResults, setSearchResults] = useState<Pet[] | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -56,25 +60,26 @@ export function MemorialWall() {
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
+      try {
+        const base64 = await compressImage(file);
         setPhotoPreview(base64);
         setFormData({ ...formData, photo: base64 });
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Failed to compress image:', err);
+      }
     }
   };
 
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.breed || !formData.years) {
-      alert(mem.alertFields);
+      toast.error(mem.alertFields);
       return;
     }
+    setIsSubmitting(true);
     try {
       await petRequestsApi.add({
         name: formData.name,
@@ -87,14 +92,16 @@ export function MemorialWall() {
         status: 'pending',
         createdAt: new Date().toISOString(),
       });
-    } catch (err) {
+      toast.success(mem.successMsg || 'Заявка успешно отправлена!');
+      setFormData({ name: '', breed: '', years: '', emoji: '🐱', description: '', email: '', photo: '' });
+      setPhotoPreview('');
+      setShowForm(false);
+    } catch (err: any) {
       console.error('Failed to submit pet request:', err);
+      toast.error('Ошибка при отправке заявки: ' + (err.message || String(err)));
+    } finally {
+      setIsSubmitting(false);
     }
-    setFormData({ name: '', breed: '', years: '', emoji: '🐱', description: '', email: '', photo: '' });
-    setPhotoPreview('');
-    setShowForm(false);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 5000);
   };
 
   const handleDeletePet = async (id: number | undefined) => {
@@ -295,14 +302,16 @@ export function MemorialWall() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
                   type="submit"
-                  style={{ backgroundColor: '#d0e0bd', color: '#222719', border: 'none', padding: '12px 32px', borderRadius: '26px', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}
+                  disabled={isSubmitting}
+                  style={{ backgroundColor: '#d0e0bd', color: '#222719', border: 'none', padding: '12px 32px', borderRadius: '26px', fontSize: '15px', fontWeight: 600, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
                 >
-                  {mem.btnSubmit}
+                  {isSubmitting ? 'Отправка...' : mem.btnSubmit}
                 </button>
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => { setShowForm(false); setPhotoPreview(''); setFormData({ name: '', breed: '', years: '', emoji: '🐱', description: '', email: '', photo: '' }); }}
-                  style={{ backgroundColor: '#E2EBD5', color: '#222719', border: 'none', padding: '12px 32px', borderRadius: '26px', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ backgroundColor: '#E2EBD5', color: '#222719', border: 'none', padding: '12px 32px', borderRadius: '26px', fontSize: '15px', fontWeight: 600, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
                 >
                   {mem.btnCancel}
                 </button>

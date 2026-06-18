@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, adminApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem } from '../db/api';
+import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, adminApi, settingsApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem } from '../db/api';
+import { toast } from 'sonner';
+import { compressImage } from '../utils/image';
 
 const CATEGORIES = ['Гранитные', 'Мраморные', 'Деревянные', 'Индивидуальные', 'Другое'];
 
@@ -85,20 +87,20 @@ const btnDanger: React.CSSProperties = {
   fontWeight: 600,
 };
 
-const handleImageChange = (
+const handleImageChange = async (
   e: React.ChangeEvent<HTMLInputElement>,
   setPreview: (s: string) => void,
   setForm: (fn: (prev: ServiceFormData) => ServiceFormData) => void
 ) => {
   const file = e.target.files?.[0];
   if (file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
+    try {
+      const base64 = await compressImage(file);
       setPreview(base64);
       setForm((prev) => ({ ...prev, image: base64 }));
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Failed to compress image:', err);
+    }
   }
 };
 
@@ -110,6 +112,7 @@ interface ServiceFormFieldsProps {
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   title: string;
+  isSaving?: boolean;
 }
 
 const ServiceFormFields = ({
@@ -120,7 +123,9 @@ const ServiceFormFields = ({
   onSubmit,
   onCancel,
   title,
+  isSaving = false,
 }: ServiceFormFieldsProps) => {
+
   const [activeLang, setActiveLang] = useState<'ru' | 'kz' | 'en'>('ru');
 
   const standardCategories = ['Гранитные', 'Мраморные', 'Деревянные', 'Индивидуальные'];
@@ -341,8 +346,12 @@ const ServiceFormFields = ({
         </div>
 
         <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
-          <button type="submit" style={btnPrimary}>Сохранить</button>
-          <button type="button" onClick={onCancel} style={btnSecondary}>Отмена</button>
+          <button type="submit" disabled={isSaving} style={{ ...btnPrimary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+            {isSaving ? 'Сохранение...' : 'Сохранить'}
+          </button>
+          <button type="button" disabled={isSaving} onClick={onCancel} style={{ ...btnSecondary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+            Отмена
+          </button>
         </div>
       </form>
     </div>
@@ -357,6 +366,7 @@ interface DocumentFormFieldsProps {
   title: string;
   isEdit: boolean;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isSaving?: boolean;
 }
 
 const DocumentFormFields = ({
@@ -367,6 +377,7 @@ const DocumentFormFields = ({
   title,
   isEdit,
   onFileChange,
+  isSaving = false,
 }: DocumentFormFieldsProps) => {
   return (
     <div
@@ -432,13 +443,14 @@ const DocumentFormFields = ({
         </div>
 
         <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
-          <button type="submit" style={btnPrimary}>
-            {isEdit ? 'Сохранить' : 'Добавить'}
+          <button type="submit" disabled={isSaving} style={{ ...btnPrimary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+            {isSaving ? 'Сохранение...' : (isEdit ? 'Сохранить' : 'Добавить')}
           </button>
-          <button type="button" onClick={onCancel} style={btnSecondary}>
+          <button type="button" disabled={isSaving} onClick={onCancel} style={{ ...btnSecondary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
             Отмена
           </button>
         </div>
+
       </form>
     </div>
   );
@@ -450,7 +462,7 @@ export function Admin() {
   });
   const [password, setPassword] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
-  const [tab, setTab] = useState<'requests' | 'service-requests' | 'services' | 'documents'>('requests');
+  const [tab, setTab] = useState<'requests' | 'service-requests' | 'services' | 'documents' | 'settings'>('requests');
 
   // Pet Requests
   const [requests, setRequests] = useState<PetRequest[]>([]);
@@ -494,6 +506,13 @@ export function Admin() {
   const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // App Settings
+  const [constructionCollected, setConstructionCollected] = useState('');
+  const [constructionGoal, setConstructionGoal] = useState('');
+  const [donationsCollected, setDonationsCollected] = useState('');
+  const [donationsGoal, setDonationsGoal] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -501,6 +520,7 @@ export function Admin() {
       loadServices();
       loadServiceRequests();
       loadDocuments();
+      loadSettings();
     }
   }, [isAuthenticated]);
 
@@ -523,29 +543,31 @@ export function Admin() {
     }
   }, [selectedDoc]);
 
-  const handleFormPhotoChange = (
+  const handleFormPhotoChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setForm: any,
     setPreview: any
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
+      try {
+        const base64 = await compressImage(file);
         setPreview(base64);
         setForm((prev: any) => ({ ...prev, photo: base64 }));
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Failed to compress image:', err);
+      }
     }
   };
+
 
   const handleDirectAddPet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPetForm.name || !newPetForm.breed || !newPetForm.years) {
-      alert('Пожалуйста, заполните Имя, Породу и Годы');
+      toast.error('Пожалуйста, заполните Имя, Породу и Годы');
       return;
     }
+    setIsSaving(true);
     try {
       await petsApi.add({
         name: newPetForm.name,
@@ -556,22 +578,25 @@ export function Admin() {
         photo: newPetForm.photo || undefined,
         createdAt: new Date().toISOString(),
       });
-      alert('Питомец успешно добавлен напрямую в стену памяти!');
+      toast.success('Питомец успешно добавлен напрямую на Стену Памяти!');
       setNewPetForm(emptyPetForm);
       setNewPetPhotoPreview('');
       setShowAddPetDirect(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to direct add pet:', err);
-      alert('Ошибка добавления питомца');
+      toast.error('Ошибка добавления питомца: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCreatePetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPetRequestForm.name || !newPetRequestForm.breed || !newPetRequestForm.years) {
-      alert('Пожалуйста, заполните Имя, Породу и Годы');
+      toast.error('Пожалуйста, заполните Имя, Породу и Годы');
       return;
     }
+    setIsSaving(true);
     try {
       await petRequestsApi.add({
         name: newPetRequestForm.name,
@@ -584,26 +609,29 @@ export function Admin() {
         status: 'pending',
         createdAt: new Date().toISOString(),
       });
-      alert('Заявка на добавление питомца успешно создана!');
+      toast.success('Заявка на добавление питомца успешно создана!');
       setNewPetRequestForm(emptyPetRequestForm);
       setNewPetRequestPhotoPreview('');
       setShowAddPetRequest(false);
       loadRequests();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create pet request:', err);
-      alert('Ошибка создания заявки');
+      toast.error('Ошибка создания заявки: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCreateServiceRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newServiceRequestForm.serviceId || !newServiceRequestForm.name || !newServiceRequestForm.phone) {
-      alert('Пожалуйста, выберите Памятник и укажите Имя и Телефон клиента');
+      toast.error('Пожалуйста, выберите Памятник и укажите Имя и Телефон клиента');
       return;
     }
     const matchedService = services.find(s => s.id === Number(newServiceRequestForm.serviceId));
     if (!matchedService) return;
 
+    setIsSaving(true);
     try {
       await serviceRequestsApi.add({
         serviceId: matchedService.id!,
@@ -615,13 +643,15 @@ export function Admin() {
         status: 'pending',
         createdAt: new Date().toISOString(),
       });
-      alert('Заявка на памятник успешно добавлена!');
+      toast.success('Заявка на памятник успешно добавлена!');
       setNewServiceRequestForm({ serviceId: '', name: '', phone: '', email: '', comment: '' });
       setShowAddServiceRequest(false);
       loadServiceRequests();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create service request:', err);
-      alert('Ошибка добавления заявки');
+      toast.error('Ошибка добавления заявки: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -674,10 +704,11 @@ export function Admin() {
     if (!id) return;
     try {
       await serviceRequestsApi.update(id, { status });
+      toast.success(status === 'done' ? 'Заявка отмечена как выполненная!' : 'Заявка отклонена.');
       loadServiceRequests();
     } catch (err: any) {
       console.error('Failed to update service request:', err);
-      alert('Ошибка при обновлении статуса заявки: ' + (err.message || String(err)));
+      toast.error('Ошибка при обновлении статуса заявки: ' + (err.message || String(err)));
     }
   };
 
@@ -685,6 +716,7 @@ export function Admin() {
 
   const approvePetRequest = async (id: number | undefined) => {
     if (!id) return;
+    setIsSaving(true);
     try {
       const request = await petRequestsApi.get(id);
       if (request) {
@@ -698,22 +730,29 @@ export function Admin() {
           createdAt: new Date().toISOString(),
         });
         await petRequestsApi.update(id, { status: 'approved' });
+        toast.success('Заявка одобрена, питомец добавлен на Стену Памяти!');
         loadRequests();
       }
     } catch (err: any) {
       console.error('Failed to approve pet request:', err);
-      alert('Ошибка при одобрении заявки: ' + (err.message || String(err)));
+      toast.error('Ошибка при одобрении заявки: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const rejectPetRequest = async (id: number | undefined) => {
     if (!id) return;
+    setIsSaving(true);
     try {
       await petRequestsApi.update(id, { status: 'rejected' });
+      toast.success('Заявка отклонена.');
       loadRequests();
     } catch (err: any) {
       console.error('Failed to reject pet request:', err);
-      alert('Ошибка при отклонении заявки: ' + (err.message || String(err)));
+      toast.error('Ошибка при отклонении заявки: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -764,9 +803,10 @@ export function Admin() {
   const handleAddDoc = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addDocForm.title || !addDocForm.fileData) {
-      alert('Пожалуйста, заполните название и выберите PDF-файл');
+      toast.error('Пожалуйста, заполните название и выберите PDF-файл');
       return;
     }
+    setIsSaving(true);
     try {
       await documentsApi.add({
         title: addDocForm.title,
@@ -776,12 +816,16 @@ export function Admin() {
         fileType: addDocForm.fileType,
         uploadedAt: new Date().toISOString(),
       });
-    } catch (err) {
+      toast.success('Документ успешно добавлен!');
+      setShowAddDocForm(false);
+      setAddDocForm(emptyDocForm);
+      loadDocuments();
+    } catch (err: any) {
       console.error('Failed to add document:', err);
+      toast.error('Ошибка добавления документа: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
-    setShowAddDocForm(false);
-    setAddDocForm(emptyDocForm);
-    loadDocuments();
   };
 
   const startEditDoc = (doc: DocumentItem) => {
@@ -800,9 +844,10 @@ export function Admin() {
     e.preventDefault();
     if (!editingDocId) return;
     if (!editDocForm.title) {
-      alert('Пожалуйста, заполните название');
+      toast.error('Пожалуйста, заполните название');
       return;
     }
+    setIsSaving(true);
     try {
       await documentsApi.update(editingDocId, {
         title: editDocForm.title,
@@ -811,12 +856,16 @@ export function Admin() {
         fileData: editDocForm.fileData,
         fileType: editDocForm.fileType,
       });
-    } catch (err) {
+      toast.success('Изменения в документе сохранены!');
+      setEditingDocId(null);
+      setEditDocForm(emptyDocForm);
+      loadDocuments();
+    } catch (err: any) {
       console.error('Failed to update document:', err);
+      toast.error('Ошибка сохранения документа: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
-    setEditingDocId(null);
-    setEditDocForm(emptyDocForm);
-    loadDocuments();
   };
 
   const deleteDoc = async (id: number | undefined) => {
@@ -824,10 +873,12 @@ export function Admin() {
     if (confirm('Вы уверены, что хотите удалить этот документ?')) {
       try {
         await documentsApi.delete(id);
-      } catch (err) {
+        toast.success('Документ успешно удален.');
+        loadDocuments();
+      } catch (err: any) {
         console.error('Failed to delete document:', err);
+        toast.error('Ошибка удаления: ' + (err.message || String(err)));
       }
-      loadDocuments();
     }
   };
 
@@ -851,21 +902,54 @@ export function Admin() {
     URL.revokeObjectURL(url);
   };
 
+  // ===== SETTINGS =====
+  const loadSettings = async () => {
+    try {
+      const current = await settingsApi.get();
+      setConstructionCollected(current.construction_collected || '4200000');
+      setConstructionGoal(current.construction_goal || '10000000');
+      setDonationsCollected(current.donations_collected || '1500000');
+      setDonationsGoal(current.donations_goal || '5000000');
+    } catch (err: any) {
+      console.error('Failed to load settings:', err);
+      toast.error('Ошибка при загрузке настроек сборов');
+    }
+  };
 
-  const handleImageChange = (
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await settingsApi.update({
+        construction_collected: constructionCollected,
+        construction_goal: constructionGoal,
+        donations_collected: donationsCollected,
+        donations_goal: donationsGoal,
+      });
+      toast.success('Настройки сборов успешно сохранены!');
+    } catch (err: any) {
+      console.error('Failed to save settings:', err);
+      toast.error('Ошибка при сохранении настроек: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
+  const handleImageChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setPreview: (s: string) => void,
     setForm: (fn: (prev: ServiceFormData) => ServiceFormData) => void
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
+      try {
+        const base64 = await compressImage(file);
         setPreview(base64);
         setForm((prev) => ({ ...prev, image: base64 }));
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Failed to compress image:', err);
+      }
     }
   };
 
@@ -900,10 +984,11 @@ export function Admin() {
   const handleAddService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addForm.tag || !addForm.title.ru || !addForm.description.ru) {
-      alert('Заполните обязательные поля (Тег, Название и Описание на русском языке обязательно)');
+      toast.error('Заполните обязательные поля (Тег, Название и Описание на русском языке обязательно)');
       return;
     }
     const maxOrder = Math.max(...services.map((s) => s.order), 0);
+    setIsSaving(true);
     try {
       await servicesApi.add({
         tag: addForm.tag,
@@ -914,13 +999,17 @@ export function Admin() {
         category: addForm.category || undefined,
         order: maxOrder + 1,
       });
-    } catch (err) {
+      toast.success('Памятник успешно добавлен!');
+      setAddForm(emptyForm);
+      setAddPreview('');
+      setShowAddForm(false);
+      loadServices();
+    } catch (err: any) {
       console.error('Failed to add service:', err);
+      toast.error('Ошибка при добавлении памятника: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
-    setAddForm(emptyForm);
-    setAddPreview('');
-    setShowAddForm(false);
-    loadServices();
   };
 
   const startEdit = (service: Service) => {
@@ -946,9 +1035,10 @@ export function Admin() {
     e.preventDefault();
     if (!editingId) return;
     if (!editForm.tag || !editForm.title.ru || !editForm.description.ru) {
-      alert('Заполните обязательные поля (Тег, Название и Описание на русском языке обязательно)');
+      toast.error('Заполните обязательные поля (Тег, Название и Описание на русском языке обязательно)');
       return;
     }
+    setIsSaving(true);
     try {
       await servicesApi.update(editingId, {
         tag: editForm.tag,
@@ -958,11 +1048,15 @@ export function Admin() {
         price: editForm.price || undefined,
         category: editForm.category || undefined,
       });
-    } catch (err) {
+      toast.success('Изменения в памятнике сохранены!');
+      cancelEdit();
+      loadServices();
+    } catch (err: any) {
       console.error('Failed to update service:', err);
+      toast.error('Ошибка при сохранении памятника: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
-    cancelEdit();
-    loadServices();
   };
 
   const deleteService = async (id: number | undefined) => {
@@ -970,10 +1064,12 @@ export function Admin() {
     if (confirm('Удалить услугу?')) {
       try {
         await servicesApi.delete(id);
-      } catch (err) {
+        toast.success('Памятник успешно удален.');
+        loadServices();
+      } catch (err: any) {
         console.error('Failed to delete service:', err);
+        toast.error('Ошибка при удалении памятника: ' + (err.message || String(err)));
       }
-      loadServices();
     }
   };
 
@@ -1156,6 +1252,22 @@ export function Admin() {
         >
           Документы ({documents.length})
         </button>
+        <button
+          onClick={() => setTab('settings')}
+          style={{
+            backgroundColor: tab === 'settings' ? '#d0e0bd' : 'transparent',
+            color: tab === 'settings' ? '#222719' : '#556042',
+            border: 'none',
+            padding: '10px 24px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600,
+            borderRadius: '8px',
+            transition: 'all 0.2s',
+          }}
+        >
+          ⚙️ Настройки сборов
+        </button>
       </div>
 
       {/* ===== REQUESTS TAB ===== */}
@@ -1216,8 +1328,12 @@ export function Admin() {
                 {newPetPhotoPreview && <img src={newPetPhotoPreview} alt="Preview" style={{ width: '80px', height: '80px', borderRadius: '10px', objectFit: 'cover', marginTop: '10px' }} />}
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button type="submit" style={btnPrimary}>Добавить питомца</button>
-                <button type="button" onClick={() => { setShowAddPetDirect(false); setNewPetForm(emptyPetForm); setNewPetPhotoPreview(''); }} style={btnSecondary}>Отмена</button>
+                <button type="submit" disabled={isSaving} style={{ ...btnPrimary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                  {isSaving ? 'Сохранение...' : 'Добавить питомца'}
+                </button>
+                <button type="button" disabled={isSaving} onClick={() => { setShowAddPetDirect(false); setNewPetForm(emptyPetForm); setNewPetPhotoPreview(''); }} style={{ ...btnSecondary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                  Отмена
+                </button>
               </div>
             </form>
           )}
@@ -1268,8 +1384,12 @@ export function Admin() {
                 {newPetRequestPhotoPreview && <img src={newPetRequestPhotoPreview} alt="Preview" style={{ width: '80px', height: '80px', borderRadius: '10px', objectFit: 'cover', marginTop: '10px' }} />}
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button type="submit" style={btnPrimary}>Создать заявку</button>
-                <button type="button" onClick={() => { setShowAddPetRequest(false); setNewPetRequestForm(emptyPetRequestForm); setNewPetRequestPhotoPreview(''); }} style={btnSecondary}>Отмена</button>
+                <button type="submit" disabled={isSaving} style={{ ...btnPrimary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                  {isSaving ? 'Сохранение...' : 'Создать заявку'}
+                </button>
+                <button type="button" disabled={isSaving} onClick={() => { setShowAddPetRequest(false); setNewPetRequestForm(emptyPetRequestForm); setNewPetRequestPhotoPreview(''); }} style={{ ...btnSecondary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                  Отмена
+                </button>
               </div>
             </form>
           )}
@@ -1451,8 +1571,12 @@ export function Admin() {
                 <textarea placeholder="Особые требования к оформлению памятника..." value={newServiceRequestForm.comment} onChange={(e) => setNewServiceRequestForm(prev => ({ ...prev, comment: e.target.value }))} style={{ ...inputStyle, minHeight: '80px', fontFamily: 'inherit' }} />
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button type="submit" style={btnPrimary}>Создать заявку</button>
-                <button type="button" onClick={() => { setShowAddServiceRequest(false); setNewServiceRequestForm({ serviceId: '', name: '', phone: '', email: '', comment: '' }); }} style={btnSecondary}>Отмена</button>
+                <button type="submit" disabled={isSaving} style={{ ...btnPrimary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                  {isSaving ? 'Сохранение...' : 'Создать заявку'}
+                </button>
+                <button type="button" disabled={isSaving} onClick={() => { setShowAddServiceRequest(false); setNewServiceRequestForm({ serviceId: '', name: '', phone: '', email: '', comment: '' }); }} style={{ ...btnSecondary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                  Отмена
+                </button>
               </div>
             </form>
           )}
@@ -1566,6 +1690,7 @@ export function Admin() {
               onSubmit={handleAddService}
               onCancel={() => { setShowAddForm(false); setAddForm(emptyForm); setAddPreview(''); }}
               title="Новый памятник"
+              isSaving={isSaving}
             />
           )}
 
@@ -1589,6 +1714,7 @@ export function Admin() {
                       onSubmit={handleSaveEdit}
                       onCancel={cancelEdit}
                       title={`Редактирование: ${getServiceTitle(service)}`}
+                      isSaving={isSaving}
                     />
                   ) : (
                     <div
@@ -1711,6 +1837,7 @@ export function Admin() {
               title="Новый документ"
               isEdit={false}
               onFileChange={(e) => handleDocFileChange(e, setAddDocForm)}
+              isSaving={isSaving}
             />
           )}
 
@@ -1734,6 +1861,7 @@ export function Admin() {
                       title={`Редактирование: ${doc.title}`}
                       isEdit={true}
                       onFileChange={(e) => handleDocFileChange(e, setEditDocForm)}
+                      isSaving={isSaving}
                     />
                   ) : (
                     <div
@@ -1834,6 +1962,90 @@ export function Admin() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ===== SETTINGS TAB ===== */}
+      {tab === 'settings' && (
+        <div style={{ maxWidth: '600px', backgroundColor: 'white', padding: '32px', borderRadius: '20px', border: '2px solid #E2EBD5', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
+          <h2 style={{ color: '#222719', marginTop: 0, marginBottom: '24px', fontSize: '20px' }}>⚙️ Настройки сборов и прогресса</h2>
+          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            {/* Раздел: Прогресс строительства */}
+            <div style={{ borderBottom: '1px solid #E2EBD5', paddingBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 14px', color: '#556042', fontSize: '15px', fontWeight: 600 }}>🏗️ Прогресс строительства мемориала</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Собрано (KZT) *</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="4200000"
+                    value={constructionCollected}
+                    onChange={(e) => setConstructionCollected(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Цель (KZT) *</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="10000000"
+                    value={constructionGoal}
+                    onChange={(e) => setConstructionGoal(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+              <div style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
+                Процент на сайте: {constructionGoal && Number(constructionGoal) > 0 ? Math.min(100, Math.max(0, Math.round((Number(constructionCollected) / Number(constructionGoal)) * 100))) : 0}%
+              </div>
+            </div>
+
+            {/* Раздел: Финансовая поддержка / Общие донаты */}
+            <div style={{ paddingBottom: '10px' }}>
+              <h3 style={{ margin: '0 0 14px', color: '#556042', fontSize: '15px', fontWeight: 600 }}>💚 Общие донаты фонда</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Собрано (KZT) *</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="1500000"
+                    value={donationsCollected}
+                    onChange={(e) => setDonationsCollected(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Цель (KZT) *</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="5000000"
+                    value={donationsGoal}
+                    onChange={(e) => setDonationsGoal(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+              <div style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
+                Процент на сайте: {donationsGoal && Number(donationsGoal) > 0 ? Math.min(100, Math.max(0, Math.round((Number(donationsCollected) / Number(donationsGoal)) * 100))) : 0}%
+              </div>
+            </div>
+
+            {/* Кнопка отправки */}
+            <div style={{ display: 'flex', gap: '12px', paddingTop: '10px' }}>
+              <button type="submit" disabled={isSaving} style={{ ...btnPrimary, padding: '12px 32px' }}>
+                {isSaving ? 'Сохранение...' : 'Сохранить настройки'}
+              </button>
+              <button type="button" disabled={isSaving} onClick={loadSettings} style={btnSecondary}>
+                Сбросить
+              </button>
+            </div>
+
+          </form>
         </div>
       )}
 

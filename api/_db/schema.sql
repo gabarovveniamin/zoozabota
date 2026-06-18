@@ -90,3 +90,9 @@ CREATE INDEX IF NOT EXISTS idx_services_sort_order ON services(sort_order);
 CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(status);
 CREATE INDEX IF NOT EXISTS idx_documents_uploaded_at ON documents(uploaded_at);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+
+-- Settings table (key-value store for app configuration)
+CREATE TABLE IF NOT EXISTS settings (
+  key VARCHAR(255) PRIMARY KEY,
+  value TEXT NOT NULL
+);
