@@ -906,8 +906,12 @@ export function Admin() {
   const loadSettings = async () => {
     try {
       const current = await settingsApi.get();
-      setConstructionCollected(current.construction_collected || '4200000');
-      setConstructionGoal(current.construction_goal || '10000000');
+      const goal = Number(current.construction_goal) || 100;
+      const coll = Number(current.construction_collected) || 0;
+      // Calculate percentage if they were KZT, otherwise use direct value
+      const pct = goal === 100 ? coll : Math.min(100, Math.max(0, Math.round((coll / goal) * 100)));
+      setConstructionCollected(String(pct));
+      setConstructionGoal('100');
       setDonationsCollected(current.donations_collected || '1500000');
       setDonationsGoal(current.donations_goal || '5000000');
     } catch (err: any) {
@@ -919,14 +923,21 @@ export function Admin() {
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    const pct = Number(constructionCollected);
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      toast.error('Прогресс строительства должен быть числом от 0 до 100');
+      setIsSaving(false);
+      return;
+    }
     try {
       await settingsApi.update({
-        construction_collected: constructionCollected,
-        construction_goal: constructionGoal,
+        construction_collected: String(pct),
+        construction_goal: '100',
         donations_collected: donationsCollected,
         donations_goal: donationsGoal,
       });
       toast.success('Настройки сборов успешно сохранены!');
+      loadSettings();
     } catch (err: any) {
       console.error('Failed to save settings:', err);
       toast.error('Ошибка при сохранении настроек: ' + (err.message || String(err)));
@@ -1974,32 +1985,31 @@ export function Admin() {
             {/* Раздел: Прогресс строительства */}
             <div style={{ borderBottom: '1px solid #E2EBD5', paddingBottom: '20px' }}>
               <h3 style={{ margin: '0 0 14px', color: '#556042', fontSize: '15px', fontWeight: 600 }}>🏗️ Прогресс строительства мемориала</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Собрано (KZT) *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="4200000"
-                    value={constructionCollected}
-                    onChange={(e) => setConstructionCollected(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Цель (KZT) *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="10000000"
-                    value={constructionGoal}
-                    onChange={(e) => setConstructionGoal(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
+              <div style={{ maxWidth: '300px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Текущий прогресс (%) *</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  max="100"
+                  placeholder="Например, 42"
+                  value={constructionCollected}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setConstructionCollected('');
+                      return;
+                    }
+                    const num = Number(val);
+                    if (num >= 0 && num <= 100) {
+                      setConstructionCollected(val);
+                    }
+                  }}
+                  style={inputStyle}
+                />
               </div>
               <div style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
-                Процент на сайте: {constructionGoal && Number(constructionGoal) > 0 ? Math.min(100, Math.max(0, Math.round((Number(constructionCollected) / Number(constructionGoal)) * 100))) : 0}%
+                Введите значение от 0 до 100. Это значение будет отображаться как процент выполнения на странице донатов.
               </div>
             </div>
 

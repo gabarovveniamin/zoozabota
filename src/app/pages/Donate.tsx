@@ -169,15 +169,18 @@ export function Donate() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', gap: '32px', maxWidth: '1200px', margin: '0 auto', flexWrap: 'wrap', justifyContent: 'center' }}>
           {/* Progress bar card 1: Construction */}
           <div
-            className="donate-card-responsive"
             style={{
+              flex: '1 1 450px',
+              maxWidth: '560px',
+              width: '100%',
               backgroundColor: 'white',
               borderRadius: '20px',
               boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
               padding: '36px 48px',
+              boxSizing: 'border-box',
             }}
           >
             <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#222719', margin: '0 0 24px' }}>
@@ -215,12 +218,15 @@ export function Donate() {
 
           {/* Progress bar card 2: General Donations */}
           <div
-            className="donate-card-responsive"
             style={{
+              flex: '1 1 450px',
+              maxWidth: '560px',
+              width: '100%',
               backgroundColor: 'white',
               borderRadius: '20px',
               boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
               padding: '36px 48px',
+              boxSizing: 'border-box',
             }}
           >
             <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#222719', margin: '0 0 24px' }}>
