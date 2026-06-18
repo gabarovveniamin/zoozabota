@@ -123,21 +123,23 @@ export function ServiceModal({ service, onClose }: ServiceModalProps) {
               width: '340px',
               minHeight: '300px',
               flexShrink: 0,
-              backgroundColor: '#E2EBD5',
+              backgroundColor: '#F5F9EE',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '72px',
               overflow: 'hidden',
               position: 'relative',
+              padding: '24px',
+              boxSizing: 'border-box',
             }}
           >
             {service.image ? (
-              <img src={service.image} alt={getServiceTitle(service)} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+              <img src={service.image} alt={getServiceTitle(service)} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', zIndex: 1, borderRadius: '12px' }} />
             ) : (
               <span style={{ position: 'relative', zIndex: 1 }}>🐾</span>
             )}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(69,99,50,0.15) 0%, transparent 60%)', zIndex: 2 }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(69,99,50,0.06) 0%, transparent 60%)', zIndex: 2, pointerEvents: 'none' }} />
           </div>
 
           {/* Info */}

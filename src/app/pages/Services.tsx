@@ -257,17 +257,19 @@ export function Services() {
                 {/* Image */}
                 <div
                   style={{
-                    height: '200px',
-                    backgroundColor: '#E2EBD5',
+                    height: '260px',
+                    backgroundColor: '#F5F9EE',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '56px',
                     overflow: 'hidden',
+                    padding: '16px',
+                    boxSizing: 'border-box',
                   }}
                 >
                   {service.image ? (
-                    <img src={service.image} alt={getServiceTitle(service)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={service.image} alt={getServiceTitle(service)} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }} />
                   ) : '🐾'}
                 </div>
 

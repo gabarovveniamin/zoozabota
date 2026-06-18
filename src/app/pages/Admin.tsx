@@ -1740,22 +1740,24 @@ export function Admin() {
                         transition: 'box-shadow 0.2s',
                       }}
                     >
-                      {/* Thumbnail */}
+                       {/* Thumbnail */}
                       <div
                         style={{
                           width: '160px',
-                          minHeight: '130px',
+                          height: '130px',
                           flexShrink: 0,
-                          backgroundColor: '#E2EBD5',
+                          backgroundColor: '#F5F9EE',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '40px',
                           overflow: 'hidden',
+                          padding: '8px',
+                          boxSizing: 'border-box',
                         }}
                       >
                         {service.image ? (
-                          <img src={service.image} alt={getServiceTitle(service)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={service.image} alt={getServiceTitle(service)} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '6px' }} />
                         ) : '🐾'}
                       </div>
 
