@@ -3,9 +3,11 @@ interface ServiceCardProps {
   title: string;
   description: string;
   price?: string;
+  image?: string;
+  onClick?: () => void;
 }
 
-export function ServiceCard({ tag, title, description, price }: ServiceCardProps) {
+export function ServiceCard({ tag, title, description, price, image, onClick }: ServiceCardProps) {
   return (
     <div
       className="service-card-responsive"
@@ -21,6 +23,7 @@ export function ServiceCard({ tag, title, description, price }: ServiceCardProps
         transition: 'transform 0.2s, box-shadow 0.2s',
         cursor: 'pointer',
       }}
+      onClick={onClick}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
         (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(0,0,0,0.12)';
@@ -30,18 +33,34 @@ export function ServiceCard({ tag, title, description, price }: ServiceCardProps
         (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.08)';
       }}
     >
-      {/* Image placeholder */}
+      {/* Image container */}
       <div
         style={{
           height: '180px',
-          backgroundColor: '#E2EBD5',
+          backgroundColor: '#F5F9EE',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '48px',
+          overflow: 'hidden',
+          padding: '12px',
+          boxSizing: 'border-box',
         }}
       >
-        🐾
+        {image ? (
+          <img
+            src={image}
+            alt={title}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              borderRadius: '6px',
+            }}
+          />
+        ) : (
+          '🐾'
+        )}
       </div>
 
       {/* Content */}
@@ -72,6 +91,10 @@ export function ServiceCard({ tag, title, description, price }: ServiceCardProps
       {/* Button */}
       <div style={{ padding: '0 0 0 0' }}>
         <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.();
+          }}
           style={{
             width: '100%',
             backgroundColor: '#d0e0bd',

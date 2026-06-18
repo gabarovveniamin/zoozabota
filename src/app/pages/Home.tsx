@@ -1,10 +1,34 @@
-import { Link } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { ServiceCard } from '../components/ServiceCard';
 import { useLang } from '../i18n/LangContext';
+import { servicesApi, type Service } from '../db/api';
 
 export function Home() {
   const { t } = useLang();
   const { home } = t;
+  const navigate = useNavigate();
+  const [dbServices, setDbServices] = useState<Service[]>([]);
+
+  useEffect(() => {
+    servicesApi.getAll()
+      .then(setDbServices)
+      .catch((err) => console.error('Failed to load services on Home page:', err));
+  }, []);
+
+  const getMatchingService = (cardTitle: string) => {
+    return dbServices.find((s) => {
+      if (typeof s.title === 'string') {
+        return s.title.toLowerCase() === cardTitle.toLowerCase();
+      }
+      if (s.title && typeof s.title === 'object') {
+        return Object.values(s.title).some(
+          (val) => typeof val === 'string' && val.toLowerCase() === cardTitle.toLowerCase()
+        );
+      }
+      return false;
+    });
+  };
 
   return (
     <div>
@@ -185,9 +209,27 @@ export function Home() {
 
         {/* Preview cards */}
         <div className="preview-cards-responsive" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-          {home.previewCards.map((card, i) => (
-            <ServiceCard key={i} {...card} />
-          ))}
+          {home.previewCards.map((card, i) => {
+            const matchedService = getMatchingService(card.title);
+            const image = matchedService?.image;
+
+            const handleCardClick = () => {
+              if (matchedService && matchedService.id !== undefined) {
+                navigate(`/services?id=${matchedService.id}`);
+              } else {
+                navigate('/extra');
+              }
+            };
+
+            return (
+              <ServiceCard
+                key={i}
+                {...card}
+                image={image}
+                onClick={handleCardClick}
+              />
+            );
+          })}
         </div>
       </section>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router';
 import { PageHero } from '../components/PageHero';
 import { ServiceModal } from '../components/ServiceModal';
 import { servicesApi, searchApi, type Service } from '../db/api';
@@ -7,6 +8,7 @@ import { useLang } from '../i18n/LangContext';
 export function Services() {
   const { t, lang } = useLang();
   const { services: srv } = t;
+  const location = useLocation();
 
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -69,6 +71,35 @@ export function Services() {
     };
     loadServices();
   }, []);
+
+  // Handle auto-opening and scrolling to service if "id" query parameter is present
+  useEffect(() => {
+    if (services.length === 0) return;
+
+    const params = new URLSearchParams(location.search);
+    const serviceId = params.get('id');
+
+    if (serviceId) {
+      const matched = services.find((s) => String(s.id) === serviceId);
+      if (matched) {
+        if (matched.category) {
+          setActiveFilter(matched.category);
+        } else {
+          setActiveFilter(null);
+        }
+
+        setSelectedService(matched);
+
+        // Scroll to the card element
+        setTimeout(() => {
+          const element = document.getElementById(`service-${serviceId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+      }
+    }
+  }, [location.search, services]);
 
   // Get all unique categories present in the services
   const dbCategories = Array.from(new Set(services.map(s => s.category).filter(Boolean))) as string[];
@@ -234,6 +265,7 @@ export function Services() {
             {filtered.map((service) => (
               <div
                 key={service.id}
+                id={`service-${service.id}`}
                 style={{
                   backgroundColor: 'white',
                   borderRadius: '16px',
