@@ -154,6 +154,16 @@ export const translations = {
         { label: 'БИК', value: 'KCJBKZKX' },
         { label: 'Получатель', value: 'ОФ «Фонд защиты животных»' },
       ],
+      kaspiBankTitle: '🏦 Банковский перевод (Kaspi Bank)',
+      kaspiBankRows: [
+        { label: 'Получатель', value: 'ОФ «Фонд защиты животных Өмірге үміт бер»' },
+        { label: 'Адрес', value: 'Алматы, Пограничная, дом 1/1' },
+        { label: 'БИН (ИИН)', value: '200640028131' },
+        { label: 'Банк', value: 'АО «Kaspi Bank»' },
+        { label: 'КБе', value: '18' },
+        { label: 'БИК', value: 'CASPKZKA' },
+        { label: 'Номер счёта', value: 'KZ58722S000054718923' },
+      ],
     },
     // Footer
     footer: {
@@ -329,6 +339,16 @@ export const translations = {
         { label: 'БИК', value: 'KCJBKZKX' },
         { label: 'Алушы', value: 'ҚҚ «Жануарларды қорғау қоры»' },
       ],
+      kaspiBankTitle: '🏦 Банктік аудару (Kaspi Bank)',
+      kaspiBankRows: [
+        { label: 'Алушы', value: '«Өмірге үміт бер» жануарларды қорғау қоры ҚҚ' },
+        { label: 'Мекенжай', value: 'Алматы, Пограничная, 1/1 үй' },
+        { label: 'БСН (ЖСН)', value: '200640028131' },
+        { label: 'Банк', value: '«Kaspi Bank» АҚ' },
+        { label: 'КБе', value: '18' },
+        { label: 'БИК', value: 'CASPKZKA' },
+        { label: 'Шот нөмірі', value: 'KZ58722S000054718923' },
+      ],
     },
     footer: {
       copy: '© 2026 «Өмірге Үміт Бер» жануарларды қорғау қоры',
@@ -501,6 +521,16 @@ export const translations = {
         { label: 'Bank', value: 'CenterCredit Bank JSC' },
         { label: 'BIC', value: 'KCJBKZKX' },
         { label: 'Recipient', value: 'Animal Protection Foundation' },
+      ],
+      kaspiBankTitle: '🏦 Bank Transfer (Kaspi Bank)',
+      kaspiBankRows: [
+        { label: 'Recipient', value: 'PF "Animal Protection Foundation «Өмірге үміт бер»"' },
+        { label: 'Address', value: 'Almaty, Pogranichnaya, 1/1' },
+        { label: 'BIN (IIN)', value: '200640028131' },
+        { label: 'Bank', value: 'Kaspi Bank JSC' },
+        { label: 'KBe', value: '18' },
+        { label: 'BIC', value: 'CASPKZKA' },
+        { label: 'Account number', value: 'KZ58722S000054718923' },
       ],
     },
     footer: {

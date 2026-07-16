@@ -167,6 +167,43 @@ export function Donate() {
               ))}
             </div>
           </div>
+
+          {/* Kaspi Bank Transfer Card */}
+          <div
+            className="donate-card-responsive"
+            style={{
+              width: '560px',
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: '#d0e0bd',
+                padding: '20px 28px',
+                color: '#222719',
+                fontSize: '18px',
+                fontWeight: 700,
+              }}
+            >
+              {donate.kaspiBankTitle}
+            </div>
+
+            <div style={{ padding: '28px' }}>
+              {donate.kaspiBankRows.map((row) => (
+                <div key={row.label} style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '12px', color: '#556042', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {row.label}
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 600, color: '#222719', fontFamily: 'monospace' }}>
+                    {row.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '32px', maxWidth: '1200px', margin: '0 auto', flexWrap: 'wrap', justifyContent: 'center' }}>
