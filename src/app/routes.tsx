@@ -9,7 +9,9 @@ import { Donate } from './pages/Donate';
 import { AboutUs } from './pages/AboutUs';
 import { Documents } from './pages/Documents';
 import { Admin } from './pages/Admin';
+import { Shop } from './pages/Shop';
 import { NotFound } from './pages/NotFound';
+
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +25,7 @@ export const router = createBrowserRouter([
       { path: 'services', Component: Services },
       { path: 'memorial', Component: MemorialWall },
       { path: 'extra', Component: AdditionalServices },
+      { path: 'shop', Component: Shop },
       { path: 'donate', Component: Donate },
       { path: 'documents', Component: Documents },
       { path: '*', Component: NotFound },

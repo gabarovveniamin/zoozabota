@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router';
 import { PageHero } from '../components/PageHero';
 import { useLang } from '../i18n/LangContext';
 
@@ -6,6 +7,7 @@ const EMOJIS = ['🏪', '🤝', '🏠', '🐾'];
 export function AdditionalServices() {
   const { t } = useLang();
   const { extra } = t;
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -24,6 +26,11 @@ export function AdditionalServices() {
           {extra.services.map((service, i) => (
             <div
               key={i}
+              onClick={() => {
+                if (i === 0) {
+                  navigate('/shop');
+                }
+              }}
               style={{
                 backgroundColor: 'white',
                 borderRadius: '20px',

@@ -193,6 +193,13 @@ export const translations = {
       textError: 'Произошла непредвиденная ошибка. Попробуйте обновить страницу.',
       btnHome: '← На главную',
     },
+    shop: {
+      pageTitle: '🏪 Зоомагазин',
+      backToServices: '← Назад к услугам',
+      statusTitle: 'Витрина наполняется',
+      statusDesc: 'В данный момент мы занимаемся добавлением товаров в наш каталог через панель администратора. Совсем скоро здесь появится большой ассортимент качественных кормов, аксессуаров и товаров для заботы о ваших питомцах!',
+      contactUs: 'Связаться с нами',
+    },
   },
 
   kz: {
@@ -376,6 +383,13 @@ export const translations = {
       textError: 'Күтпеген қате орын алды. Бетті жаңартып көріңіз.',
       btnHome: '← Басты бетке',
     },
+    shop: {
+      pageTitle: '🏪 Зоодүкен',
+      backToServices: '← Қызметтерге қайту',
+      statusTitle: 'Витрина толтырылуда',
+      statusDesc: 'Қазіргі уақытта біз әкімшілік панель арқылы каталогқа тауарларды қосумен айналысамыз. Жақын арада мұнда үй жануарларыңызға арналған сапалы жем-шөптердің, аксессуарлардың және басқа да өнімдердің үлкен ассортименті пайда болады!',
+      contactUs: 'Бізбен байланысу',
+    },
   },
 
   en: {
@@ -558,6 +572,13 @@ export const translations = {
       text404: 'This page does not exist. The link may be outdated or mistyped.',
       textError: 'An unexpected error occurred. Try refreshing the page.',
       btnHome: '← Back to Home',
+    },
+    shop: {
+      pageTitle: '🏪 Pet Store',
+      backToServices: '← Back to services',
+      statusTitle: 'Shop is being stocked',
+      statusDesc: 'We are currently adding products to our catalog through the admin panel. Very soon a wide assortment of high-quality feed, accessories, and pet care products will be available here!',
+      contactUs: 'Contact Us',
     },
   },
 } as const;
