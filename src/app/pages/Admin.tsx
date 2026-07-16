@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, adminApi, settingsApi, shopItemsApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem, type ShopItem } from '../db/api';
+import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, adminApi, settingsApi, shopItemsApi, shopOrdersApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem, type ShopItem, type ShopOrder } from '../db/api';
 import { toast } from 'sonner';
 import { compressImage } from '../utils/image';
 
@@ -728,6 +728,10 @@ export function Admin() {
   const [editingShopId, setEditingShopId] = useState<number | null>(null);
   const [editShopForm, setEditShopForm] = useState<ShopItemFormData>(emptyShopItemForm);
   const [editShopPreview, setEditShopPreview] = useState('');
+  const [shopSubTab, setShopSubTab] = useState<'items' | 'orders'>('items');
+
+  // Shop Orders State
+  const [shopOrders, setShopOrders] = useState<ShopOrder[]>([]);
 
   // Pet Requests
   const [requests, setRequests] = useState<PetRequest[]>([]);
@@ -787,6 +791,7 @@ export function Admin() {
       loadDocuments();
       loadSettings();
       loadShopItems();
+      loadShopOrders();
     }
   }, [isAuthenticated]);
 
@@ -1121,6 +1126,37 @@ export function Admin() {
     } catch (err: any) {
       console.error('Failed to toggle shop item status:', err);
       toast.error('Ошибка при изменении статуса: ' + (err.message || String(err)));
+    }
+  };
+
+  // ===== SHOP ORDERS =====
+  const loadShopOrders = async () => {
+    try {
+      const orders = await shopOrdersApi.getAll();
+      setShopOrders(orders);
+    } catch (err: any) {
+      console.error('Failed to load shop orders:', err);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (id: number, status: ShopOrder['status']) => {
+    try {
+      await shopOrdersApi.update(id, { status });
+      toast.success('Статус заказа обновлён');
+      loadShopOrders();
+    } catch (err: any) {
+      toast.error('Ошибка: ' + (err.message || String(err)));
+    }
+  };
+
+  const handleDeleteOrder = async (id: number) => {
+    if (!window.confirm('Удалить этот заказ?')) return;
+    try {
+      await shopOrdersApi.delete(id);
+      toast.success('Заказ удалён');
+      loadShopOrders();
+    } catch (err: any) {
+      toast.error('Ошибка: ' + (err.message || String(err)));
     }
   };
 
@@ -2449,21 +2485,57 @@ export function Admin() {
       {tab === 'shop' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ color: '#222719', margin: 0, fontSize: '20px' }}>Управление магазином</h2>
+            <h2 style={{ color: '#222719', margin: 0, fontSize: '20px' }}>🏪 Управление магазином</h2>
+            {shopSubTab === 'items' && (
+              <button
+                onClick={() => { setShowAddShopForm(!showAddShopForm); setEditingShopId(null); }}
+                style={{ ...btnPrimary, display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}
+              >
+                {showAddShopForm ? '✕ Отмена' : '+ Добавить товар'}
+              </button>
+            )}
+          </div>
+
+          {/* Sub-tabs */}
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '28px', backgroundColor: '#E2EBD5', padding: '4px', borderRadius: '12px', width: 'fit-content' }}>
             <button
-              onClick={() => { setShowAddShopForm(!showAddShopForm); setEditingShopId(null); }}
+              onClick={() => setShopSubTab('items')}
               style={{
-                ...btnPrimary,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 24px',
+                backgroundColor: shopSubTab === 'items' ? '#d0e0bd' : 'transparent',
+                color: shopSubTab === 'items' ? '#222719' : '#556042',
+                border: 'none', padding: '8px 20px', cursor: 'pointer',
+                fontSize: '13px', fontWeight: 600, borderRadius: '8px', transition: 'all 0.2s'
               }}
             >
-              {showAddShopForm ? '✕ Отмена' : '+ Добавить товар'}
+              📦 Товары ({shopItems.length})
+            </button>
+            <button
+              onClick={() => { setShopSubTab('orders'); loadShopOrders(); }}
+              style={{
+                backgroundColor: shopSubTab === 'orders' ? '#d0e0bd' : 'transparent',
+                color: shopSubTab === 'orders' ? '#222719' : '#556042',
+                border: 'none', padding: '8px 20px', cursor: 'pointer',
+                fontSize: '13px', fontWeight: 600, borderRadius: '8px', transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: '6px'
+              }}
+            >
+              📋 Заказы
+              {shopOrders.filter(o => o.status === 'pending').length > 0 && (
+                <span style={{
+                  backgroundColor: '#ff4444', color: 'white',
+                  borderRadius: '50%', width: '18px', height: '18px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '10px', fontWeight: 700
+                }}>
+                  {shopOrders.filter(o => o.status === 'pending').length}
+                </span>
+              )}
             </button>
           </div>
 
+          {/* ===== ITEMS SUB-TAB ===== */}
+          {shopSubTab === 'items' && (
+            <>
           {/* Add form */}
           {showAddShopForm && (
             <ShopItemFormFields
@@ -2618,6 +2690,125 @@ export function Admin() {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+            </>
+          )}
+
+          {/* ===== ORDERS SUB-TAB ===== */}
+          {shopSubTab === 'orders' && (
+            <div>
+              {shopOrders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px', color: '#999', backgroundColor: 'white', borderRadius: '14px', border: '2px dashed #E2EBD5' }}>
+                  <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
+                  <p style={{ margin: 0, fontSize: '16px' }}>Заказов пока нет</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {shopOrders.map((order) => {
+                    const statusColors: Record<string, { bg: string; color: string; label: string }> = {
+                      pending:   { bg: '#FFF3CD', color: '#856404', label: '⏳ Ожидает' },
+                      paid:      { bg: '#D1ECF1', color: '#0C5460', label: '💳 Оплачен' },
+                      completed: { bg: '#D4EDDA', color: '#155724', label: '✅ Выполнен' },
+                      cancelled: { bg: '#F8D7DA', color: '#721C24', label: '❌ Отменён' },
+                    };
+                    const sc = statusColors[order.status] || statusColors.pending;
+                    const orderItems = Array.isArray(order.items) ? order.items : [];
+
+                    return (
+                      <div key={order.id} style={{
+                        backgroundColor: 'white',
+                        border: '2px solid #E2EBD5',
+                        borderRadius: '16px',
+                        overflow: 'hidden',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                      }}>
+                        {/* Order Header */}
+                        <div style={{
+                          padding: '16px 20px',
+                          backgroundColor: '#f7faf3',
+                          borderBottom: '1px solid #E2EBD5',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: '12px'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontWeight: 800, fontSize: '16px', color: '#222719' }}>Заказ #{order.id}</span>
+                            <span style={{
+                              backgroundColor: sc.bg, color: sc.color,
+                              fontSize: '11px', fontWeight: 700,
+                              padding: '4px 10px', borderRadius: '10px'
+                            }}>{sc.label}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '12px', color: '#888' }}>
+                              {order.createdAt ? new Date(order.createdAt).toLocaleString('ru-RU') : ''}
+                            </span>
+                            {/* Status Selector */}
+                            <select
+                              value={order.status}
+                              onChange={(e) => handleUpdateOrderStatus(order.id!, e.target.value as ShopOrder['status'])}
+                              style={{
+                                padding: '6px 10px', borderRadius: '8px',
+                                border: '1.5px solid #D8E8C8',
+                                fontSize: '12px', cursor: 'pointer', fontWeight: 600
+                              }}
+                            >
+                              <option value="pending">⏳ Ожидает</option>
+                              <option value="paid">💳 Оплачен</option>
+                              <option value="completed">✅ Выполнен</option>
+                              <option value="cancelled">❌ Отменён</option>
+                            </select>
+                            <button
+                              onClick={() => handleDeleteOrder(order.id!)}
+                              style={{ ...btnDanger, padding: '6px 14px', fontSize: '12px' }}
+                            >
+                              Удалить
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Order Body */}
+                        <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                          {/* Customer Info */}
+                          <div>
+                            <h4 style={{ margin: '0 0 10px', fontSize: '13px', color: '#888', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Покупатель</h4>
+                            <p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#222719' }}>{order.customerName}</p>
+                            <p style={{ margin: '0 0 4px', fontSize: '14px', color: '#556042' }}>📞 {order.customerPhone}</p>
+                            {order.customerEmail && <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#888' }}>✉️ {order.customerEmail}</p>}
+                            {order.deliveryAddress && <p style={{ margin: '0 0 0', fontSize: '13px', color: '#556042' }}>📍 {order.deliveryAddress}</p>}
+                          </div>
+
+                          {/* Items & Total */}
+                          <div>
+                            <h4 style={{ margin: '0 0 10px', fontSize: '13px', color: '#888', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Товары</h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {orderItems.map((oi: any, idx: number) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#222719' }}>
+                                  <span>{oi.title} <span style={{ color: '#888' }}>× {oi.quantity}</span></span>
+                                  <span style={{ fontWeight: 600 }}>{oi.price}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{
+                              marginTop: '12px', paddingTop: '10px',
+                              borderTop: '1px solid #E2EBD5',
+                              display: 'flex', justifyContent: 'space-between',
+                              fontWeight: 800, fontSize: '16px', color: '#222719'
+                            }}>
+                              <span>Итого:</span>
+                              <span>{order.totalPrice}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

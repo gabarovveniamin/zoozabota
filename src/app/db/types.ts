@@ -80,3 +80,23 @@ export interface ShopItem {
   category?: string;
   createdAt?: string;
 }
+
+export interface ShopOrderItem {
+  itemId: number;
+  title: string;
+  price: string;
+  quantity: number;
+  image?: string;
+}
+
+export interface ShopOrder {
+  id?: number;
+  items: ShopOrderItem[];
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  deliveryAddress?: string;
+  totalPrice: string;
+  status: 'pending' | 'completed' | 'cancelled' | 'paid';
+  createdAt?: string;
+}

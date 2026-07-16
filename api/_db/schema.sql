@@ -108,3 +108,16 @@ CREATE TABLE IF NOT EXISTS shop_items (
   category VARCHAR(100),      -- e.g. 'food', 'toys', 'care' or custom categories
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Shop orders table
+CREATE TABLE IF NOT EXISTS shop_orders (
+  id SERIAL PRIMARY KEY,
+  items JSONB NOT NULL,          -- Array of { itemId, title, price, quantity }
+  customer_name VARCHAR(255) NOT NULL,
+  customer_phone VARCHAR(50) NOT NULL,
+  customer_email VARCHAR(255),
+  delivery_address TEXT,
+  total_price VARCHAR(100) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'cancelled', 'paid')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
