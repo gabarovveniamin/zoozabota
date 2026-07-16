@@ -115,6 +115,19 @@ export async function ensureTablesExist(sql: ReturnType<typeof neon>) {
         )
       `;
 
+      await sql`
+        CREATE TABLE IF NOT EXISTS shop_items (
+          id SERIAL PRIMARY KEY,
+          title JSONB NOT NULL,
+          description JSONB NOT NULL,
+          price JSONB NOT NULL,
+          image TEXT,
+          status VARCHAR(50) NOT NULL DEFAULT 'in_stock' CHECK (status IN ('in_stock', 'out_of_stock')),
+          category VARCHAR(100),
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `;
+
       // 3. Indexes
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_name_trgm ON pets USING gin (name gin_trgm_ops)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_pets_breed_trgm ON pets USING gin (breed gin_trgm_ops)`;

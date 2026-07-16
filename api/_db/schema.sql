@@ -96,3 +96,15 @@ CREATE TABLE IF NOT EXISTS settings (
   key VARCHAR(255) PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+-- Shop items table
+CREATE TABLE IF NOT EXISTS shop_items (
+  id SERIAL PRIMARY KEY,
+  title JSONB NOT NULL,       -- {ru, kz, en}
+  description JSONB NOT NULL, -- {ru, kz, en}
+  price JSONB NOT NULL,       -- {ru, kz, en}
+  image TEXT,                 -- base64 encoded image
+  status VARCHAR(50) NOT NULL DEFAULT 'in_stock' CHECK (status IN ('in_stock', 'out_of_stock')),
+  category VARCHAR(100),      -- e.g. 'food', 'toys', 'care' or custom categories
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);

@@ -1,10 +1,10 @@
 // Client-side API module — replaces Dexie for data access
 // All functions call Vercel Serverless Functions which talk to Neon PostgreSQL
 
-import type { Pet, PetRequest, Service, ServiceRequest, DocumentItem } from './types';
+import type { Pet, PetRequest, Service, ServiceRequest, DocumentItem, ShopItem } from './types';
 
 // Re-export types for backward compatibility
-export type { Pet, PetRequest, Service, ServiceRequest, DocumentItem };
+export type { Pet, PetRequest, Service, ServiceRequest, DocumentItem, ShopItem };
 export { DEFAULT_SERVICES, DEFAULT_DOCUMENTS, MOCK_PDF } from './types';
 
 const API_BASE = '/api';
@@ -159,4 +159,25 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
+};
+
+// ===== SHOP ITEMS =====
+export const shopItemsApi = {
+  getAll: (): Promise<ShopItem[]> =>
+    request<ShopItem[]>('/shop-items'),
+
+  add: (item: Omit<ShopItem, 'id'>): Promise<ShopItem> =>
+    request<ShopItem>('/shop-items', {
+      method: 'POST',
+      body: JSON.stringify(item),
+    }),
+
+  update: (id: number, data: Partial<ShopItem>): Promise<void> =>
+    request<void>('/shop-items', {
+      method: 'PUT',
+      body: JSON.stringify({ id, ...data }),
+    }),
+
+  delete: (id: number): Promise<void> =>
+    request<void>(`/shop-items?id=${id}`, { method: 'DELETE' }),
 };

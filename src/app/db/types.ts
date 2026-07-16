@@ -69,3 +69,14 @@ export const DEFAULT_SERVICES: Omit<Service, 'id'>[] = [
 ];
 
 export const DEFAULT_DOCUMENTS: Omit<DocumentItem, 'id'>[] = [];
+
+export interface ShopItem {
+  id?: number;
+  title: { ru: string; kz: string; en: string };
+  description: { ru: string; kz: string; en: string };
+  price: { ru: string; kz: string; en: string };
+  image?: string; // base64 encoded image
+  status: 'in_stock' | 'out_of_stock';
+  category?: string;
+  createdAt?: string;
+}

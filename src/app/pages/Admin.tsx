@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, adminApi, settingsApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem } from '../db/api';
+import { petsApi, petRequestsApi, servicesApi, serviceRequestsApi, documentsApi, adminApi, settingsApi, shopItemsApi, type PetRequest, type Service, type ServiceRequest, type DocumentItem, type ShopItem } from '../db/api';
 import { toast } from 'sonner';
 import { compressImage } from '../utils/image';
 
@@ -37,6 +37,24 @@ const emptyForm: ServiceFormData = {
   image: '',
   price: { ru: '', kz: '', en: '' },
   category: 'Гранитные',
+};
+
+type ShopItemFormData = {
+  title: { ru: string; kz: string; en: string };
+  description: { ru: string; kz: string; en: string };
+  price: { ru: string; kz: string; en: string };
+  image: string;
+  status: 'in_stock' | 'out_of_stock';
+  category: string;
+};
+
+const emptyShopItemForm: ShopItemFormData = {
+  title: { ru: '', kz: '', en: '' },
+  description: { ru: '', kz: '', en: '' },
+  price: { ru: '', kz: '', en: '' },
+  image: '',
+  status: 'in_stock',
+  category: 'Корма',
 };
 
 const inputStyle: React.CSSProperties = {
@@ -456,13 +474,260 @@ const DocumentFormFields = ({
   );
 };
 
+interface ShopItemFormFieldsProps {
+  form: ShopItemFormData;
+  setForm: React.Dispatch<React.SetStateAction<ShopItemFormData>> | ((fn: (prev: ShopItemFormData) => ShopItemFormData) => void) | any;
+  preview: string;
+  setPreview: (s: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onCancel: () => void;
+  title: string;
+  isSaving?: boolean;
+}
+
+const ShopItemFormFields = ({
+  form,
+  setForm,
+  preview,
+  setPreview,
+  onSubmit,
+  onCancel,
+  title,
+  isSaving = false,
+}: ShopItemFormFieldsProps) => {
+  const [activeLang, setActiveLang] = useState<'ru' | 'kz' | 'en'>('ru');
+  const shopCategories = ['Корма', 'Игрушки', 'Гигиена', 'Другое'];
+
+  return (
+    <div
+      style={{
+        backgroundColor: '#f7faf3',
+        padding: '24px',
+        borderRadius: '14px',
+        border: '2px solid #D8E8C8',
+        marginBottom: '24px',
+      }}
+    >
+      <h3 style={{ margin: '0 0 20px', color: '#222719', fontSize: '17px' }}>{title}</h3>
+      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        
+        {/* Language selector tabs */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', borderBottom: '1px solid #E2EBD5', paddingBottom: '10px', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#556042', marginRight: '6px' }}>Язык полей:</span>
+          {(['ru', 'kz', 'en'] as const).map((l) => {
+            const labels = { ru: '🇷🇺 Русский (RU)', kz: '🇰🇿 Казахский (KZ)', en: '🇬🇧 Английский (EN)' };
+            const isFilled = !!(form.title[l] && form.description[l] && form.price[l]);
+            const isActive = activeLang === l;
+            return (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setActiveLang(l)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  backgroundColor: isActive ? '#d0e0bd' : '#E2EBD5',
+                  color: isActive ? '#222719' : '#556042',
+                  transition: 'all 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                {labels[l]} {isFilled && '✓'}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Row 1: Title & Price */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>
+              Название ({activeLang.toUpperCase()}) *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder={`Название на ${activeLang === 'ru' ? 'русском' : activeLang === 'kz' ? 'казахском' : 'английском'}`}
+              value={form.title[activeLang]}
+              onChange={(e) => {
+                const val = e.target.value;
+                setForm((prev: any) => ({
+                  ...prev,
+                  title: { ...prev.title, [activeLang]: val }
+                }));
+              }}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>
+              Цена ({activeLang.toUpperCase()}) *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="например: 4 500 ₸"
+              value={form.price[activeLang]}
+              onChange={(e) => {
+                const val = e.target.value;
+                setForm((prev: any) => ({
+                  ...prev,
+                  price: { ...prev.price, [activeLang]: val }
+                }));
+              }}
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        {/* Row 2: Category & Status */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Категория</label>
+            <select
+              value={form.category}
+              onChange={(e) => setForm((prev: any) => ({ ...prev, category: e.target.value }))}
+              style={{ ...inputStyle, cursor: 'pointer' }}
+            >
+              {shopCategories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Статус наличия</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm((prev: any) => ({ ...prev, status: e.target.value as any }))}
+              style={{ ...inputStyle, cursor: 'pointer' }}
+            >
+              <option value="in_stock">✅ В наличии</option>
+              <option value="out_of_stock">❌ Нет в наличии</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>
+            Описание ({activeLang.toUpperCase()}) *
+          </label>
+          <textarea
+            required
+            placeholder={`Опишите товар на ${activeLang === 'ru' ? 'русском' : activeLang === 'kz' ? 'казахском' : 'английском'}...`}
+            value={form.description[activeLang]}
+            onChange={(e) => {
+              const val = e.target.value;
+              setForm((prev: any) => ({
+                ...prev,
+                description: { ...prev.description, [activeLang]: val }
+              }));
+            }}
+            style={{ ...inputStyle, minHeight: '90px', resize: 'vertical' }}
+          />
+        </div>
+
+        {/* Image upload */}
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 600, color: '#556042', display: 'block', marginBottom: '6px' }}>Изображение товара</label>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              border: '2px dashed #C8DFA0',
+              borderRadius: '10px',
+              padding: '16px 20px',
+              cursor: 'pointer',
+              backgroundColor: preview ? '#f0f8e8' : 'white',
+              transition: 'background-color 0.2s',
+            }}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  try {
+                    const base64 = await compressImage(file);
+                    setPreview(base64);
+                    setForm((prev: any) => ({ ...prev, image: base64 }));
+                  } catch (err) {
+                    console.error('Failed to compress image:', err);
+                  }
+                }
+              }}
+              style={{ display: 'none' }}
+            />
+            {preview ? (
+              <>
+                <img
+                  src={preview}
+                  alt="Preview"
+                  style={{ width: '80px', height: '60px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+                />
+                <div>
+                  <div style={{ fontSize: '14px', color: '#222719', fontWeight: 600 }}>✓ Изображение загружено</div>
+                  <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>Нажмите, чтобы заменить</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: '32px' }}>🖼️</div>
+                <div>
+                  <div style={{ fontSize: '14px', color: '#556042', fontWeight: 500 }}>Нажмите для загрузки изображения</div>
+                  <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>JPG, PNG, WebP</div>
+                </div>
+              </>
+            )}
+          </label>
+          {preview && (
+            <button
+              type="button"
+              onClick={() => { setPreview(''); setForm((prev: any) => ({ ...prev, image: '' })); }}
+              style={{ marginTop: '8px', fontSize: '12px', color: '#cc2222', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              ✕ Удалить изображение
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
+          <button type="submit" disabled={isSaving} style={{ ...btnPrimary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+            {isSaving ? 'Сохранение...' : 'Сохранить'}
+          </button>
+          <button type="button" disabled={isSaving} onClick={onCancel} style={{ ...btnSecondary, opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+            Отмена
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 export function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('admin_authenticated') === 'true';
   });
   const [password, setPassword] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
-  const [tab, setTab] = useState<'requests' | 'service-requests' | 'services' | 'documents' | 'settings'>('requests');
+  const [tab, setTab] = useState<'requests' | 'service-requests' | 'services' | 'documents' | 'settings' | 'shop'>('requests');
+
+  // Shop Items State
+  const [shopItems, setShopItems] = useState<ShopItem[]>([]);
+  const [showAddShopForm, setShowAddShopForm] = useState(false);
+  const [addShopForm, setAddShopForm] = useState<ShopItemFormData>(emptyShopItemForm);
+  const [addShopPreview, setAddShopPreview] = useState('');
+  const [editingShopId, setEditingShopId] = useState<number | null>(null);
+  const [editShopForm, setEditShopForm] = useState<ShopItemFormData>(emptyShopItemForm);
+  const [editShopPreview, setEditShopPreview] = useState('');
 
   // Pet Requests
   const [requests, setRequests] = useState<PetRequest[]>([]);
@@ -521,6 +786,7 @@ export function Admin() {
       loadServiceRequests();
       loadDocuments();
       loadSettings();
+      loadShopItems();
     }
   }, [isAuthenticated]);
 
@@ -753,6 +1019,108 @@ export function Admin() {
       toast.error('Ошибка при отклонении заявки: ' + (err.message || String(err)));
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // ===== SHOP ITEMS =====
+  const loadShopItems = async () => {
+    try {
+      const items = await shopItemsApi.getAll();
+      setShopItems(items);
+    } catch (err: any) {
+      console.error('Failed to load shop items:', err);
+      setDbError(err.message || String(err));
+    }
+  };
+
+  const handleAddShopItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addShopForm.title.ru || !addShopForm.description.ru || !addShopForm.price.ru) {
+      toast.error('Пожалуйста, заполните название, описание и цену на русском языке');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await shopItemsApi.add({
+        title: addShopForm.title,
+        description: addShopForm.description,
+        price: addShopForm.price,
+        image: addShopForm.image || undefined,
+        status: addShopForm.status,
+        category: addShopForm.category || undefined,
+      });
+      toast.success('Товар успешно добавлен в магазин!');
+      setAddShopForm(emptyShopItemForm);
+      setAddShopPreview('');
+      setShowAddShopForm(false);
+      loadShopItems();
+    } catch (err: any) {
+      console.error('Failed to add shop item:', err);
+      toast.error('Ошибка при добавлении товара: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditShopItem = (item: ShopItem) => {
+    setEditingShopId(item.id!);
+    setEditShopForm({
+      title: typeof item.title === 'string' ? { ru: item.title, kz: '', en: '' } : item.title,
+      description: typeof item.description === 'string' ? { ru: item.description, kz: '', en: '' } : item.description,
+      price: typeof item.price === 'string' ? { ru: item.price, kz: '', en: '' } : item.price,
+      image: item.image || '',
+      status: item.status,
+      category: item.category || 'Корма',
+    });
+    setEditShopPreview(item.image || '');
+    setShowAddShopForm(false);
+  };
+
+  const handleSaveShopItemEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingShopId) return;
+    setIsSaving(true);
+    try {
+      await shopItemsApi.update(editingShopId, {
+        title: editShopForm.title,
+        description: editShopForm.description,
+        price: editShopForm.price,
+        image: editShopForm.image || undefined,
+        status: editShopForm.status,
+        category: editShopForm.category || undefined,
+      });
+      toast.success('Товар успешно сохранен!');
+      setEditingShopId(null);
+      loadShopItems();
+    } catch (err: any) {
+      console.error('Failed to save shop item:', err);
+      toast.error('Ошибка при сохранении товара: ' + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteShopItem = async (id: number) => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот товар?')) return;
+    try {
+      await shopItemsApi.delete(id);
+      toast.success('Товар удален из магазина.');
+      loadShopItems();
+    } catch (err: any) {
+      console.error('Failed to delete shop item:', err);
+      toast.error('Ошибка при удалении товара: ' + (err.message || String(err)));
+    }
+  };
+
+  const handleToggleShopItemStatus = async (item: ShopItem) => {
+    const newStatus = item.status === 'in_stock' ? 'out_of_stock' : 'in_stock';
+    try {
+      await shopItemsApi.update(item.id!, { status: newStatus });
+      toast.success(newStatus === 'in_stock' ? 'Товар теперь в наличии' : 'Товар теперь отсутствует в наличии');
+      loadShopItems();
+    } catch (err: any) {
+      console.error('Failed to toggle shop item status:', err);
+      toast.error('Ошибка при изменении статуса: ' + (err.message || String(err)));
     }
   };
 
@@ -1278,6 +1646,22 @@ export function Admin() {
           }}
         >
           ⚙️ Настройки сборов
+        </button>
+        <button
+          onClick={() => setTab('shop')}
+          style={{
+            backgroundColor: tab === 'shop' ? '#d0e0bd' : 'transparent',
+            color: tab === 'shop' ? '#222719' : '#556042',
+            border: 'none',
+            padding: '10px 24px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600,
+            borderRadius: '8px',
+            transition: 'all 0.2s',
+          }}
+        >
+          🏪 Магазин ({shopItems.length})
         </button>
       </div>
 
@@ -2058,6 +2442,184 @@ export function Admin() {
             </div>
 
           </form>
+        </div>
+      )}
+
+      {/* ===== SHOP TAB ===== */}
+      {tab === 'shop' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h2 style={{ color: '#222719', margin: 0, fontSize: '20px' }}>Управление магазином</h2>
+            <button
+              onClick={() => { setShowAddShopForm(!showAddShopForm); setEditingShopId(null); }}
+              style={{
+                ...btnPrimary,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 24px',
+              }}
+            >
+              {showAddShopForm ? '✕ Отмена' : '+ Добавить товар'}
+            </button>
+          </div>
+
+          {/* Add form */}
+          {showAddShopForm && (
+            <ShopItemFormFields
+              form={addShopForm}
+              setForm={setAddShopForm}
+              preview={addShopPreview}
+              setPreview={setAddShopPreview}
+              onSubmit={handleAddShopItem}
+              onCancel={() => { setShowAddShopForm(false); setAddShopForm(emptyShopItemForm); setAddShopPreview(''); }}
+              title="Новый товар"
+              isSaving={isSaving}
+            />
+          )}
+
+          {/* Shop Items list */}
+          {shopItems.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: '#999', backgroundColor: 'white', borderRadius: '14px', border: '2px dashed #E2EBD5' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏪</div>
+              <p style={{ margin: 0, fontSize: '16px' }}>Товары в магазине отсутствуют</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {shopItems.map((item) => (
+                <div key={item.id}>
+                  {/* Edit form inline */}
+                  {editingShopId === item.id ? (
+                    <ShopItemFormFields
+                      form={editShopForm}
+                      setForm={setEditShopForm}
+                      preview={editShopPreview}
+                      setPreview={setEditShopPreview}
+                      onSubmit={handleSaveShopItemEdit}
+                      onCancel={() => setEditingShopId(null)}
+                      title={`Редактирование: ${item.title?.ru || ''}`}
+                      isSaving={isSaving}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        backgroundColor: 'white',
+                        border: '2px solid #E2EBD5',
+                        borderRadius: '14px',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        gap: '0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                        transition: 'box-shadow 0.2s',
+                      }}
+                    >
+                      {/* Thumbnail */}
+                      <div
+                        style={{
+                          width: '160px',
+                          height: '130px',
+                          flexShrink: 0,
+                          backgroundColor: '#F5F9EE',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '40px',
+                          overflow: 'hidden',
+                          padding: '8px',
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        {item.image ? (
+                          <img src={item.image} alt={item.title?.ru} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '6px' }} />
+                        ) : '🏪'}
+                      </div>
+
+                      {/* Info */}
+                      <div style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <span
+                            style={{
+                              backgroundColor: '#d0e0bd',
+                              color: '#222719',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '3px 10px',
+                              borderRadius: '10px',
+                            }}
+                          >
+                            {item.category || 'Разное'}
+                          </span>
+                          <span
+                            onClick={() => handleToggleShopItemStatus(item)}
+                            style={{
+                              backgroundColor: item.status === 'in_stock' ? '#E2F0D9' : '#FCE4D6',
+                              color: item.status === 'in_stock' ? '#385723' : '#C65911',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '3px 10px',
+                              borderRadius: '10px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title="Нажмите для переключения статуса"
+                          >
+                            {item.status === 'in_stock' ? '● В наличии' : '○ Нет в наличии'}
+                          </span>
+                        </div>
+                        <h3 style={{ margin: 0, color: '#222719', fontSize: '16px' }}>
+                          {item.title?.ru} <span style={{ fontSize: '12px', color: '#888', fontWeight: 'normal' }}>/ {item.title?.kz} / {item.title?.en}</span>
+                        </h3>
+                        <p style={{ margin: 0, color: '#556042', fontSize: '13px', lineHeight: 1.5 }}>{item.description?.ru}</p>
+                        <p style={{ margin: 0, color: '#222719', fontWeight: 700, fontSize: '15px' }}>
+                          {item.price?.ru} <span style={{ fontSize: '11px', color: '#888', fontWeight: 'normal' }}>({item.price?.kz} / {item.price?.en})</span>
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          padding: '16px',
+                          justifyContent: 'center',
+                          borderLeft: '1px solid #E2EBD5',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <button
+                          onClick={() => handleEditShopItem(item)}
+                          style={{
+                            backgroundColor: '#E2EBD5',
+                            color: '#222719',
+                            border: 'none',
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            transition: 'background-color 0.15s',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d0e0bd'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#E2EBD5'; }}
+                        >
+                          Редактировать
+                        </button>
+                        <button
+                          onClick={() => handleDeleteShopItem(item.id!)}
+                          style={btnDanger}
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
